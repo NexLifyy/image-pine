@@ -1,14 +1,116 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import ToolPageShell from '@/components/ToolPageShell';
 import UploadBox from '@/components/UploadBox';
 import { saveAs } from 'file-saver';
 import { saveHistory } from '@/lib/storage';
 
+// Reusable component to render the watermark overlay
+function WatermarkLayer({
+  type,
+  text,
+  fontFamily,
+  fontSize,
+  color,
+  opacity,
+  rotation,
+  bold,
+  italic,
+  tile,
+  logoPreview,
+  logoScale,
+  logoOpacity,
+  logoRotation,
+  position,
+  customX,
+  customY,
+  isThumbnail = false
+}) {
+  const scaledFontSize = isThumbnail ? Math.max(10, fontSize * 0.35) : fontSize * 0.75;
+  const scaledLogoScale = isThumbnail ? Math.max(12, logoScale * 0.8) : logoScale;
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 2 }}>
+      {type === 'text' ? (
+        tile ? (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isThumbnail ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)',
+            gap: isThumbnail ? 12 : 32,
+            padding: isThumbnail ? 8 : 20,
+            transform: `rotate(${rotation}deg)`,
+            transformOrigin: 'center',
+            opacity: opacity,
+            color: color,
+            fontFamily: fontFamily,
+            fontSize: `${isThumbnail ? scaledFontSize * 0.8 : fontSize * 0.5}px`,
+            fontWeight: bold ? 'bold' : 'normal',
+            fontStyle: italic ? 'italic' : 'normal',
+            textAlign: 'center',
+            width: '150%',
+            height: '150%',
+            margin: '-25%'
+          }}>
+            {Array.from({ length: isThumbnail ? 9 : 25 }).map((_, i) => (
+              <span key={i} style={{ whiteSpace: 'nowrap' }}>{text}</span>
+            ))}
+          </div>
+        ) : (
+          <div style={{
+            position: 'absolute',
+            opacity: opacity,
+            color: color,
+            fontFamily: fontFamily,
+            fontSize: `${scaledFontSize}px`,
+            fontWeight: bold ? 'bold' : 'normal',
+            fontStyle: italic ? 'italic' : 'normal',
+            transform: `rotate(${rotation}deg)`,
+            transformOrigin: 'center',
+            whiteSpace: 'nowrap',
+            ...(() => {
+              if (position === 'top-left') return { top: isThumbnail ? 8 : 16, left: isThumbnail ? 8 : 16 };
+              if (position === 'top-right') return { top: isThumbnail ? 8 : 16, right: isThumbnail ? 8 : 16 };
+              if (position === 'bottom-left') return { bottom: isThumbnail ? 8 : 16, left: isThumbnail ? 8 : 16 };
+              if (position === 'bottom-right') return { bottom: isThumbnail ? 8 : 16, right: isThumbnail ? 8 : 16 };
+              if (position === 'custom') return { top: `${customY}%`, left: `${customX}%`, transform: `translate(-50%, -50%) rotate(${rotation}deg)` };
+              return { top: '50%', left: '50%', transform: `translate(-50%, -50%) rotate(${rotation}deg)` };
+            })()
+          }}>
+            {text}
+          </div>
+        )
+      ) : (
+        logoPreview && (
+          <img
+            src={logoPreview}
+            alt=""
+            style={{
+              position: 'absolute',
+              width: `${scaledLogoScale}%`,
+              opacity: logoOpacity,
+              transform: `rotate(${logoRotation}deg) translate(-50%, -50%)`,
+              transformOrigin: 'top left',
+              ...(() => {
+                if (position === 'top-left') return { top: `${scaledLogoScale * 0.5}%`, left: `${scaledLogoScale * 0.5}%` };
+                if (position === 'top-right') return { top: `${scaledLogoScale * 0.5}%`, right: 0 };
+                if (position === 'bottom-left') return { bottom: 0, left: `${scaledLogoScale * 0.5}%` };
+                if (position === 'bottom-right') return { bottom: 0, right: 0 };
+                if (position === 'custom') return { top: `${customY}%`, left: `${customX}%` };
+                return { top: '50%', left: '50%' };
+              })()
+            }}
+          />
+        )
+      )}
+    </div>
+  );
+}
+
 export default function WatermarkPage() {
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [previewMode, setPreviewMode] = useState('single'); // 'single' | 'bulk'
   
   // Watermark Settings
   const [type, setType] = useState('text'); // 'text' | 'image'
@@ -47,8 +149,8 @@ export default function WatermarkPage() {
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
       ),
-      title: '100% Private',
-      desc: 'All watermarking and rendering process inside your web browser. No files are uploaded.'
+      title: '100% Local & Private',
+      desc: 'All watermarking and graphics calculations run entirely in your web browser. No files are uploaded to any server.'
     },
     {
       icon: (
@@ -56,8 +158,8 @@ export default function WatermarkPage() {
           <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
         </svg>
       ),
-      title: 'Bulk Processing & ZIPs',
-      desc: 'Watermark dozens of images simultaneously and download them all instantly packaged as a ZIP.'
+      title: 'Bulk Processing & ZIP Archives',
+      desc: 'Overlay watermarks onto dozens of images simultaneously and download them in a single ZIP container.'
     },
     {
       icon: (
@@ -67,21 +169,48 @@ export default function WatermarkPage() {
           <path d="M20.4 14.5L16 10l-6 6-4-4-3 3" />
         </svg>
       ),
-      title: 'Logo or Text Overlays',
-      desc: 'Add text watermarks with custom fonts, colors, and repeating grid tiles, or overlay your brand logo.'
+      title: 'Multi-Image Live Grid',
+      desc: 'Switch to bulk grid mode to preview how watermarks fit on all uploaded files under different sizes.'
+    },
+    {
+      icon: (
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
+          <path d="M7 8h10M7 12h10M7 16h10" />
+        </svg>
+      ),
+      title: 'Custom Brand Overlays',
+      desc: 'Design beautiful text templates with distinct fonts, colors, and grid angles, or load brand logo PNGs.'
+    },
+    {
+      icon: (
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
+          <path d="M12 4v16m8-8H4" />
+        </svg>
+      ),
+      title: 'Anti-Theft Tiling Mode',
+      desc: 'Tile text structures across the image in repeating grids. Makes it extremely difficult for third parties to crop out watermark overlays.'
+    },
+    {
+      icon: (
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
+          <path d="M9 12l2 2 4-4m5.6 1.2a9 9 0 11-11.2 0C10.4 3.7 13.6 3.7 15.6 5.7z" />
+        </svg>
+      ),
+      title: 'Lossless Visual Scaling',
+      desc: 'Saves files locally using canvas rendering relative to native image bounds, keeping export output details pristine.'
     }
   ];
 
   const _STEPS = [
-    { n: '1', title: 'Upload Files', desc: 'Select one or more images you want to watermark.' },
-    { n: '2', title: 'Customize Overlay', desc: 'Design your text watermark or load a PNG logo, then adjust scale and positioning.' },
-    { n: '3', title: 'Export Bundle', desc: 'Download watermarked images individually or as a compressed ZIP file.' }
+    { n: '1', title: 'Upload Files', desc: 'Select one or more photos you want to protect.' },
+    { n: '2', title: 'Design Template', desc: 'Configure a text structure or import a brand logo PNG and adjust scale and positioning.' },
+    { n: '3', title: 'Download Protections', desc: 'Export individually or package all results as a ZIP container.' }
   ];
 
   const _FAQS = [
-    { q: 'How does bulk watermarking work?', a: 'You can upload multiple files at once. The watermark template you design is automatically applied to all images based on their individual dimensions, preserving relative sizing.' },
-    { q: 'What is a Tiled Watermark?', a: 'Tiling repeats your text watermark across the entire image in a grid pattern. This makes it extremely difficult for others to crop or remove the watermark, which is ideal for sending proofs to clients.' },
-    { q: 'Which formats are supported for the logo?', a: 'You can upload a PNG, JPEG, SVG, or WebP logo file. Transparent PNGs or vector SVGs look best.' }
+    { q: 'How does bulk watermarking work?', a: 'Upload multiple files together. The template settings you define are projected onto all files simultaneously, keeping formatting and dimensions proportional.' },
+    { q: 'What is a Tiled Watermark?', a: 'Tiling repeats your text pattern in a grid over the entire photo canvas. This is highly effective at stopping others from cropping or using automated tools to extract the visual contents.' },
+    { q: 'Can I select a custom download format?', a: 'Yes. You can preserve the original format or convert your results to JPG, PNG, or WebP upon bulk export.' }
   ];
 
   useEffect(() => {
@@ -100,12 +229,17 @@ export default function WatermarkPage() {
   };
 
   const removeFile = (id, e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     const filtered = files.filter(f => f.id !== id);
     setFiles(filtered);
     if (selectedFile?.id === id) {
       setSelectedFile(filtered.length > 0 ? filtered[0] : null);
     }
+  };
+
+  const formatSize = (b) => {
+    if (b >= 1024 * 1024) return (b / (1024 * 1024)).toFixed(2) + ' MB';
+    return (b / 1024).toFixed(1) + ' KB';
   };
 
   // Helper to draw watermark on canvas
@@ -133,7 +267,6 @@ export default function WatermarkPage() {
       if (tile) {
         // Tiled Grid Watermark
         ctx.textAlign = 'center';
-        // Add rotation
         const rad = (rotation * Math.PI) / 180;
         const textWidth = ctx.measureText(text).width || 150;
         const xGap = textWidth + 100;
@@ -355,10 +488,10 @@ export default function WatermarkPage() {
           />
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-scale-in">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-scale-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 24 }}>
           
           {/* Left: Files List Sidebar */}
-          <div className="lg:col-span-3" style={cardStyle}>
+          <div className="lg:col-span-3" style={{ ...cardStyle, gridColumn: 'span 3' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, borderBottom: '1px solid #F1F1F7', paddingBottom: 10 }}>
               <span style={{ fontSize: 11, fontWeight: 800, color: '#9898B5', textTransform: 'uppercase' }}>Files ({files.length})</span>
               <button onClick={() => { setFiles([]); setSelectedFile(null); }} style={{ fontSize: 10, fontWeight: 700, color: '#EF4444', border: 'none', background: 'none', cursor: 'pointer' }}>Clear All</button>
@@ -377,7 +510,10 @@ export default function WatermarkPage() {
                   }}
                 >
                   <img src={fileObj.preview} alt="" style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 6, border: '1px solid #E4E4EF', flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#111128', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexGrow: 1 }} title={fileObj.name}>{fileObj.name}</span>
+                  <div style={{ minWidth: 0, flexGrow: 1 }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: '#111128', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }} title={fileObj.name}>{fileObj.name}</p>
+                    <p style={{ fontSize: 9, color: '#9898B5', margin: '2px 0 0' }}>{formatSize(fileObj.size)}</p>
+                  </div>
                   <button type="button" onClick={(e) => removeFile(fileObj.id, e)} style={{ border: 'none', background: 'none', color: '#9898B5', cursor: 'pointer', fontSize: 12 }}>×</button>
                 </div>
               ))}
@@ -409,87 +545,129 @@ export default function WatermarkPage() {
             />
           </div>
 
-          {/* Middle: Canvas Preview */}
-          <div className="lg:col-span-5" style={{ ...cardStyle, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          {/* Middle: Canvas Preview (Single/Bulk Grid switcher) */}
+          <div className="lg:col-span-5" style={{ ...cardStyle, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', gridColumn: 'span 5' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #E4E4EF' }}>
               <h3 style={{ fontSize: 13, fontWeight: 700, color: '#111128', margin: 0 }}>Watermark Preview</h3>
-              <span style={{ fontSize: 10, color: '#9898B5', fontWeight: 600 }}>Real-time Rendering</span>
+              <div style={{ display: 'flex', gap: 2, background: '#F1F1F7', borderRadius: 8, padding: 2 }}>
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode('single')}
+                  style={{
+                    padding: '4px 10px', fontSize: 10, fontWeight: 700, borderRadius: 6, border: 'none', cursor: 'pointer',
+                    background: previewMode === 'single' ? '#fff' : 'transparent', color: previewMode === 'single' ? '#5B5BD6' : '#9898B5',
+                    boxShadow: previewMode === 'single' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s'
+                  }}
+                >
+                  Single
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode('bulk')}
+                  style={{
+                    padding: '4px 10px', fontSize: 10, fontWeight: 700, borderRadius: 6, border: 'none', cursor: 'pointer',
+                    background: previewMode === 'bulk' ? '#fff' : 'transparent', color: previewMode === 'bulk' ? '#5B5BD6' : '#9898B5',
+                    boxShadow: previewMode === 'bulk' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s'
+                  }}
+                >
+                  Bulk Grid ({files.length})
+                </button>
+              </div>
             </div>
 
-            <div style={{
-              minHeight: 380, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-              background: 'repeating-conic-gradient(#F1F1F7 0% 25%, #fff 0% 50%) 0 0 / 20px 20px',
-              position: 'relative'
-            }}>
-              {selectedFile && (
-                <div style={{ position: 'relative', maxWidth: '100%', maxHeight: 440, display: 'inline-block', overflow: 'hidden', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-                  {/* Base Image */}
-                  <img src={selectedFile.preview} alt="" style={{ maxWidth: '100%', maxHeight: 440, display: 'block', userSelect: 'none' }} />
+            {previewMode === 'single' ? (
+              <div style={{
+                minHeight: 380, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+                background: 'repeating-conic-gradient(#F1F1F7 0% 25%, #fff 0% 50%) 0 0 / 20px 20px',
+                position: 'relative'
+              }}>
+                {selectedFile && (
+                  <div style={{ position: 'relative', maxWidth: '100%', maxHeight: 440, display: 'inline-block', overflow: 'hidden', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+                    {/* Base Image */}
+                    <img src={selectedFile.preview} alt="" style={{ maxWidth: '100%', maxHeight: 440, display: 'block', userSelect: 'none' }} />
 
-                  {/* Watermark Preview Layer via HTML elements overlaying the image */}
-                  <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-                    {type === 'text' ? (
-                      tile ? (
-                        <div style={{
-                          display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 32, padding: 20,
-                          transform: `rotate(${rotation}deg)`, transformOrigin: 'center', opacity: opacity,
-                          color: color, fontFamily: fontFamily, fontSize: `${fontSize * 0.5}px`, // scaled preview
-                          fontWeight: bold ? 'bold' : 'normal', fontStyle: italic ? 'italic' : 'normal',
-                          textAlign: 'center', width: '150%', height: '150%', margin: '-25%'
-                        }}>
-                          {Array.from({ length: 25 }).map((_, i) => (
-                            <span key={i} style={{ whiteSpace: 'nowrap' }}>{text}</span>
-                          ))}
-                        </div>
-                      ) : (
-                        <div style={{
-                          position: 'absolute', opacity: opacity, color: color, fontFamily: fontFamily,
-                          fontSize: `${fontSize * 0.75}px`, fontWeight: bold ? 'bold' : 'normal',
-                          fontStyle: italic ? 'italic' : 'normal', transform: `rotate(${rotation}deg)`,
-                          transformOrigin: 'center',
-                          ...(() => {
-                            if (position === 'top-left') return { top: 16, left: 16 };
-                            if (position === 'top-right') return { top: 16, right: 16 };
-                            if (position === 'bottom-left') return { bottom: 16, left: 16 };
-                            if (position === 'bottom-right') return { bottom: 16, right: 16 };
-                            if (position === 'custom') return { top: `${customY}%`, left: `${customX}%`, transform: `translate(-50%, -50%) rotate(${rotation}deg)` };
-                            return { top: '50%', left: '50%', transform: `translate(-50%, -50%) rotate(${rotation}deg)` };
-                          })()
-                        }}>
-                          {text}
-                        </div>
-                      )
-                    ) : (
-                      logoPreview && (
-                        <img
-                          src={logoPreview}
-                          alt=""
-                          style={{
-                            position: 'absolute',
-                            width: `${logoScale}%`,
-                            opacity: logoOpacity,
-                            transform: `rotate(${logoRotation}deg) translate(-50%, -50%)`,
-                            transformOrigin: 'top left',
-                            ...(() => {
-                              if (position === 'top-left') return { top: `${logoScale * 0.5}%`, left: `${logoScale * 0.5}%` };
-                              if (position === 'top-right') return { top: `${logoScale * 0.5}%`, right: 0 };
-                              if (position === 'bottom-left') return { bottom: 0, left: `${logoScale * 0.5}%` };
-                              if (position === 'bottom-right') return { bottom: 0, right: 0 };
-                              if (position === 'custom') return { top: `${customY}%`, left: `${customX}%` };
-                              return { top: '50%', left: '50%' };
-                            })()
-                          }}
-                        />
-                      )
-                    )}
+                    {/* Watermark Preview Layer */}
+                    <WatermarkLayer
+                      type={type} text={text} fontFamily={fontFamily} fontSize={fontSize} color={color}
+                      opacity={opacity} rotation={rotation} bold={bold} italic={italic} tile={tile}
+                      logoPreview={logoPreview} logoScale={logoScale} logoOpacity={logoOpacity} logoRotation={logoRotation}
+                      position={position} customX={customX} customY={customY} isThumbnail={false}
+                    />
                   </div>
+                )}
+              </div>
+            ) : (
+              <div style={{
+                minHeight: 380, padding: 20,
+                background: 'repeating-conic-gradient(#F1F1F7 0% 25%, #fff 0% 50%) 0 0 / 20px 20px',
+                position: 'relative', overflowY: 'auto', maxHeight: 480
+              }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 14 }}>
+                  {files.map(fileObj => (
+                    <div
+                      key={fileObj.id}
+                      onClick={() => setSelectedFile(fileObj)}
+                      style={{
+                        background: '#fff', border: `2px solid ${selectedFile?.id === fileObj.id ? '#5B5BD6' : '#E4E4EF'}`,
+                        borderRadius: 12, padding: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 6,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)', transition: 'all 0.15s'
+                      }}
+                    >
+                      <div style={{ position: 'relative', width: '100%', height: 100, overflow: 'hidden', borderRadius: 8, background: '#F7F7FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img src={fileObj.preview} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                        <WatermarkLayer
+                          type={type} text={text} fontFamily={fontFamily} fontSize={fontSize} color={color}
+                          opacity={opacity} rotation={rotation} bold={bold} italic={italic} tile={tile}
+                          logoPreview={logoPreview} logoScale={logoScale} logoOpacity={logoOpacity} logoRotation={logoRotation}
+                          position={position} customX={customX} customY={customY} isThumbnail={true}
+                        />
+                      </div>
+                      <div style={{ minWidth: 0, flexGrow: 1 }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: '#111128', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }} title={fileObj.name}>
+                          {fileObj.name}
+                        </p>
+                        <p style={{ fontSize: 9, color: '#9898B5', margin: '2px 0 0' }}>
+                          {formatSize(fileObj.size)}
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            setIsProcessing(true);
+                            try {
+                              const logoImg = await loadLogoImage();
+                              const { blob, name } = await processImage(fileObj, logoImg);
+                              saveAs(blob, name);
+                              saveHistory('Image Watermarker', `${fileObj.name} (Watermarked)`);
+                            } catch (e) {
+                              console.error(e);
+                            } finally {
+                              setIsProcessing(false);
+                            }
+                          }}
+                          style={{ flex: 1, border: 'none', background: '#F0FDF4', color: '#16A34A', fontSize: 10, fontWeight: 700, padding: '4px 0', borderRadius: 6, cursor: 'pointer' }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeFile(fileObj.id); }}
+                          style={{ border: 'none', background: '#FFF5F5', color: '#EF4444', fontSize: 10, fontWeight: 700, padding: '4px 6px', borderRadius: 6, cursor: 'pointer' }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Right: Controls Panel */}
-          <div className="lg:col-span-4" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="lg:col-span-4" style={{ display: 'flex', flexDirection: 'column', gap: 16, gridColumn: 'span 4' }}>
             
             {/* Watermark Type Selector */}
             <div style={cardStyle}>
@@ -776,7 +954,7 @@ export default function WatermarkPage() {
                     onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 24px rgba(22,163,74,0.38)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                     onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(22,163,74,0.28)'; e.currentTarget.style.transform = 'none'; }}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: 16, height: 16 }}>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                     Download Watermarked
