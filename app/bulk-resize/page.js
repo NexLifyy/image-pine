@@ -404,7 +404,7 @@ export default function BulkResizePage() {
                     Target Width (px)
                   </label>
                   <input
-                    type="number"
+                    type="text" inputMode="numeric" pattern="[0-9]*"
                     value={widthInput}
                     onChange={(e) => setWidthInput(e.target.value)}
                     disabled={isProcessing || resizeAsPercentage}
@@ -417,7 +417,7 @@ export default function BulkResizePage() {
                     Target Height (px)
                   </label>
                   <input
-                    type="number"
+                    type="text" inputMode="numeric" pattern="[0-9]*"
                     value={heightInput}
                     onChange={(e) => setHeightInput(e.target.value)}
                     disabled={isProcessing || resizeAsPercentage}
@@ -458,7 +458,7 @@ export default function BulkResizePage() {
                     </label>
                     <div className="flex gap-1.5">
                       <input
-                        type="number"
+                        type="text" inputMode="numeric" pattern="[0-9]*"
                         value={targetSizeInput}
                         onChange={(e) => setTargetSizeInput(e.target.value)}
                         disabled={isProcessing}

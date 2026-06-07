@@ -353,7 +353,7 @@ export default function RotatePage() {
                       Custom Angle (Degrees)
                     </label>
                     <input
-                      type="number"
+                      type="text" inputMode="numeric" pattern="[0-9]*"
                       value={angle}
                       onChange={(e) => setAngle(parseInt(e.target.value, 10) || 0)}
                       className="w-full text-xs font-semibold text-textmain border border-bordercolor rounded-lg bg-lightbg/40 px-3 py-2.5 focus:outline-none focus:border-primary"

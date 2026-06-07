@@ -422,7 +422,7 @@ export default function ResizeJpgPage() {
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Width (px)</label>
                       <input
-                        type="number"
+                        type="text" inputMode="numeric" pattern="[0-9]*"
                         value={widthInput}
                         onChange={(e) => handleWidthChange(e.target.value)}
                         disabled={resizeAsPercentage}
@@ -433,7 +433,7 @@ export default function ResizeJpgPage() {
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Height (px)</label>
                       <input
-                        type="number"
+                        type="text" inputMode="numeric" pattern="[0-9]*"
                         value={heightInput}
                         onChange={(e) => handleHeightChange(e.target.value)}
                         disabled={resizeAsPercentage}
@@ -477,7 +477,7 @@ export default function ResizeJpgPage() {
                         </label>
                         <div className="flex gap-1.5">
                           <input
-                            type="number"
+                            type="text" inputMode="numeric" pattern="[0-9]*"
                             value={targetSizeInput}
                             onChange={(e) => setTargetSizeInput(e.target.value)}
                             className="w-full text-xs font-semibold text-textmain border border-bordercolor rounded-lg bg-lightbg/40 px-2.5 py-2 focus:outline-none focus:border-primary"

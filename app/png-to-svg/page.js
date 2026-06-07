@@ -313,7 +313,7 @@ export default function PngToSvgPage() {
                       <div>
                         <label className="block text-[10px] font-bold text-textmain">Gradient Step</label>
                         <input 
-                          type="number" 
+                          type="text" inputMode="numeric" pattern="[0-9]*" 
                           value={svgGradientStep} 
                           onChange={(e) => setSvgGradientStep(parseInt(e.target.value, 10) || 16)}
                           className="w-full text-xs border rounded px-2 py-1"
@@ -322,7 +322,7 @@ export default function PngToSvgPage() {
                       <div>
                         <label className="block text-[10px] font-bold text-textmain">Color Precision</label>
                         <input 
-                          type="number" 
+                          type="text" inputMode="numeric" pattern="[0-9]*" 
                           value={svgColorPrecision} 
                           onChange={(e) => setSvgColorPrecision(parseInt(e.target.value, 10) || 6)}
                           className="w-full text-xs border rounded px-2 py-1"
@@ -345,7 +345,7 @@ export default function PngToSvgPage() {
                       <div>
                         <label className="block text-[10px] font-bold text-textmain">Filter Speckle</label>
                         <input 
-                          type="number" 
+                          type="text" inputMode="numeric" pattern="[0-9]*" 
                           value={svgFilterSpeckle} 
                           onChange={(e) => setSvgFilterSpeckle(parseInt(e.target.value, 10) || 4)}
                           className="w-full text-xs border rounded px-2 py-1"
@@ -369,7 +369,7 @@ export default function PngToSvgPage() {
                       <div>
                         <label className="block text-[9px] font-bold text-textmain">Splice Thresh</label>
                         <input 
-                          type="number" 
+                          type="text" inputMode="numeric" pattern="[0-9]*" 
                           value={svgSpliceThreshold} 
                           onChange={(e) => setSvgSpliceThreshold(parseInt(e.target.value, 10) || 45)}
                           className="w-full text-xs border rounded px-1.5 py-0.5"
@@ -378,7 +378,7 @@ export default function PngToSvgPage() {
                       <div>
                         <label className="block text-[9px] font-bold text-textmain">Corner Thresh</label>
                         <input 
-                          type="number" 
+                          type="text" inputMode="numeric" pattern="[0-9]*" 
                           value={svgCornerThreshold} 
                           onChange={(e) => setSvgCornerThreshold(parseInt(e.target.value, 10) || 60)}
                           className="w-full text-xs border rounded px-1.5 py-0.5"
@@ -387,7 +387,7 @@ export default function PngToSvgPage() {
                       <div>
                         <label className="block text-[9px] font-bold text-textmain">Segment Len</label>
                         <input 
-                          type="number" 
+                          type="text" inputMode="numeric" pattern="[0-9]*" 
                           value={svgSegmentLength} 
                           onChange={(e) => setSvgSegmentLength(parseInt(e.target.value, 10) || 4)}
                           className="w-full text-xs border rounded px-1.5 py-0.5"

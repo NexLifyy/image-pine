@@ -452,7 +452,7 @@ export default function ImageConverterPage() {
                             <div>
                               <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Width (px)</label>
                               <input 
-                                type="number" 
+                                type="text" inputMode="numeric" pattern="[0-9]*" 
                                 placeholder="Auto" 
                                 value={customWidth}
                                 onChange={(e) => setCustomWidth(e.target.value)}
@@ -462,7 +462,7 @@ export default function ImageConverterPage() {
                             <div>
                               <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Height (px)</label>
                               <input 
-                                type="number" 
+                                type="text" inputMode="numeric" pattern="[0-9]*" 
                                 placeholder="Auto" 
                                 value={customHeight}
                                 onChange={(e) => setCustomHeight(e.target.value)}
@@ -526,7 +526,7 @@ export default function ImageConverterPage() {
                           <div>
                             <label className="block text-[10px] font-bold text-textmain">Gradient Step</label>
                             <input 
-                              type="number" 
+                              type="text" inputMode="numeric" pattern="[0-9]*" 
                               value={svgGradientStep} 
                               onChange={(e) => setSvgGradientStep(parseInt(e.target.value, 10) || 16)}
                               className="w-full text-xs border border-bordercolor rounded px-2 py-1"
@@ -536,7 +536,7 @@ export default function ImageConverterPage() {
                           <div>
                             <label className="block text-[10px] font-bold text-textmain">Color Precision</label>
                             <input 
-                              type="number" 
+                              type="text" inputMode="numeric" pattern="[0-9]*" 
                               value={svgColorPrecision} 
                               onChange={(e) => setSvgColorPrecision(parseInt(e.target.value, 10) || 6)}
                               className="w-full text-xs border border-bordercolor rounded px-2 py-1"
@@ -560,7 +560,7 @@ export default function ImageConverterPage() {
                           <div>
                             <label className="block text-[10px] font-bold text-textmain">Filter Speckle</label>
                             <input 
-                              type="number" 
+                              type="text" inputMode="numeric" pattern="[0-9]*" 
                               value={svgFilterSpeckle} 
                               onChange={(e) => setSvgFilterSpeckle(parseInt(e.target.value, 10) || 4)}
                               className="w-full text-xs border border-bordercolor rounded px-2 py-1"
@@ -584,7 +584,7 @@ export default function ImageConverterPage() {
                           <div>
                             <label className="block text-[9px] font-bold text-textmain">Splice Thresh</label>
                             <input 
-                              type="number" 
+                              type="text" inputMode="numeric" pattern="[0-9]*" 
                               value={svgSpliceThreshold} 
                               onChange={(e) => setSvgSpliceThreshold(parseInt(e.target.value, 10) || 45)}
                               className="w-full text-xs border border-bordercolor rounded px-1.5 py-1"
@@ -593,7 +593,7 @@ export default function ImageConverterPage() {
                           <div>
                             <label className="block text-[9px] font-bold text-textmain">Corner Thresh</label>
                             <input 
-                              type="number" 
+                              type="text" inputMode="numeric" pattern="[0-9]*" 
                               value={svgCornerThreshold} 
                               onChange={(e) => setSvgCornerThreshold(parseInt(e.target.value, 10) || 60)}
                               className="w-full text-xs border border-bordercolor rounded px-1.5 py-1"
@@ -602,7 +602,7 @@ export default function ImageConverterPage() {
                           <div>
                             <label className="block text-[9px] font-bold text-textmain">Segment Len</label>
                             <input 
-                              type="number" 
+                              type="text" inputMode="numeric" pattern="[0-9]*" 
                               value={svgSegmentLength} 
                               onChange={(e) => setSvgSegmentLength(parseInt(e.target.value, 10) || 4)}
                               className="w-full text-xs border border-bordercolor rounded px-1.5 py-1"

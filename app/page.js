@@ -6,6 +6,30 @@ import { saveAs } from 'file-saver';
 import { saveHistory } from '@/lib/storage';
 import { getMimeForSaveFormat, getExtensionForMime, compressCanvasToBlob } from '@/lib/imageUtils';
 
+/* ─── InputField — defined OUTSIDE Home to prevent remount on every render ── */
+function InputField({ value, onChange, type = 'text', placeholder, inputMode = 'numeric', pattern = '[0-9]*' }) {
+  return (
+    <input
+      type={type}
+      inputMode={inputMode}
+      pattern={pattern}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      style={{
+        width: '100%', padding: '9px 12px',
+        background: '#F7F7FB', border: '1px solid #E4E4EF',
+        borderRadius: 9, fontSize: 13, fontWeight: 700,
+        color: '#111128', outline: 'none',
+        transition: 'border-color 0.18s, box-shadow 0.18s, background 0.18s',
+        fontFamily: 'inherit', boxSizing: 'border-box',
+      }}
+      onFocus={e => { e.target.style.borderColor = '#5B5BD6'; e.target.style.boxShadow = '0 0 0 3px rgba(91,91,214,0.1)'; e.target.style.background = '#fff'; }}
+      onBlur={e => { e.target.style.borderColor = '#E4E4EF'; e.target.style.boxShadow = 'none'; e.target.style.background = '#F7F7FB'; }}
+    />
+  );
+}
+
 /* ─── SegControl ─────────────────────────────────────────────────────────── */
 function SegControl({ options, value, onChange }) {
   return (
@@ -417,20 +441,7 @@ export default function Home() {
   const saving = selectedFile&&processedSize ? Math.max(0,Math.round((1-processedSize/selectedFile.size)*100)) : 0;
   const hasFiles = files.length > 0;
 
-  const InputField = ({ value, onChange, type='number', placeholder }) => (
-    <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
-      style={{
-        width:'100%', padding:'9px 12px',
-        background:'#F7F7FB', border:'1px solid #E4E4EF',
-        borderRadius:9, fontSize:13, fontWeight:700,
-        color:'#111128', outline:'none',
-        transition:'border-color 0.18s, box-shadow 0.18s, background 0.18s',
-        fontFamily:'inherit',
-      }}
-      onFocus={e=>{e.target.style.borderColor='#5B5BD6';e.target.style.boxShadow='0 0 0 3px rgba(91,91,214,0.1)';e.target.style.background='#fff';}}
-      onBlur={e=>{e.target.style.borderColor='#E4E4EF';e.target.style.boxShadow='none';e.target.style.background='#F7F7FB';}}
-    />
-  );
+  // InputField is defined at module level above to avoid remount-on-render focus loss.
 
   const faqs = [
     {q:'What image formats are supported?',a:'JPEG, JPG, PNG, WebP, and SVG. You can also convert between formats on export.'},
@@ -639,7 +650,7 @@ export default function Home() {
             <div style={{background:'#fff',border:'1px solid #E4E4EF',borderRadius:16,boxShadow:'0 1px 4px rgba(0,0,0,0.05)',position:'sticky',top:76,overflow:'hidden'}}>
               {/* Tabs */}
               <div style={{display:'flex',borderBottom:'1px solid #E4E4EF',padding:'0 4px'}}>
-                {[{id:'resize',label:'Resize'},{id:'rotate',label:'Rotate'},{id:'flip',label:'Flip'},{id:'compress',label:'Export'}].map(tab=>(
+                {[{id:'resize',label:'Resize'},{id:'rotate',label:'Rotate'},{id:'flip',label:'Flip'}].map(tab=>(
                   <button key={tab.id} type="button" onClick={()=>setActiveTab(tab.id)} style={{
                     flex:1,padding:'12px 4px',fontSize:11,fontWeight:700,border:'none',background:'none',cursor:'pointer',
                     color:activeTab===tab.id?'#5B5BD6':'#9898B5',
@@ -674,6 +685,46 @@ export default function Home() {
                         </div>
                         <input type="range" min="1" max="200" value={percentageValue} onChange={e=>setPercentageValue(e.target.value)} style={{width:'100%'}}/>
                         {widthInput&&heightInput&&<p style={{fontSize:11,color:'#9898B5',fontWeight:600,marginTop:10,textAlign:'center'}}>Output: {widthInput} × {heightInput} px</p>}
+                      </div>
+                    )}
+
+                    {/* ── Output Format (moved from Export tab) ── */}
+                    <div>
+                      <label style={{fontSize:10,fontWeight:700,color:'#9898B5',display:'block',marginBottom:6,letterSpacing:'0.05em',textTransform:'uppercase'}}>Output Format</label>
+                      <div style={{position:'relative'}}>
+                        <select value={saveFormat} onChange={e=>setSaveFormat(e.target.value)} style={{width:'100%',padding:'9px 32px 9px 12px',background:'#F7F7FB',border:'1px solid #E4E4EF',borderRadius:9,fontSize:13,fontWeight:700,color:'#111128',outline:'none',cursor:'pointer',fontFamily:'inherit',boxSizing:'border-box'}}
+                          onFocus={e=>{e.target.style.borderColor='#5B5BD6';e.target.style.background='#fff';}} onBlur={e=>{e.target.style.borderColor='#E4E4EF';e.target.style.background='#F7F7FB';}}>
+                          <option value="Original">Same as Original</option>
+                          <option value="JPG">JPEG (JPG)</option>
+                          <option value="PNG">PNG</option>
+                          <option value="WebP">WebP</option>
+                        </select>
+                        <svg style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none',color:'#9898B5'}} width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" d="M19 9l-7 7-7-7"/></svg>
+                      </div>
+                    </div>
+
+                    {/* ── Compression Mode (moved from Export tab) ── */}
+                    <div>
+                      <label style={{fontSize:10,fontWeight:700,color:'#9898B5',display:'block',marginBottom:6,letterSpacing:'0.05em',textTransform:'uppercase'}}>Compression Mode</label>
+                      <SegControl options={[{value:'quality',label:'By Quality'},{value:'size',label:'By Size (KB)'}]} value={compressMode} onChange={setCompressMode}/>
+                    </div>
+                    {compressMode==='quality'?(
+                      <div>
+                        <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
+                          <label style={{fontSize:10,fontWeight:700,color:'#9898B5',letterSpacing:'0.05em',textTransform:'uppercase'}}>Quality</label>
+                          <span style={{fontSize:18,fontWeight:900,color:compressQuality>70?'#5B5BD6':compressQuality>40?'#F59E0B':'#EF4444'}}>{compressQuality}%</span>
+                        </div>
+                        <input type="range" min="5" max="100" value={compressQuality} onChange={e=>setCompressQuality(parseInt(e.target.value,10))} style={{width:'100%'}}/>
+                        <div style={{display:'flex',justifyContent:'space-between',marginTop:8,gap:4}}>
+                          {[{label:'Smallest',q:15,color:'#EF4444'},{label:'Balanced',q:70,color:'#F59E0B'},{label:'Best',q:95,color:'#10B981'}].map(({label,q,color})=>(
+                            <button key={label} type="button" onClick={()=>setCompressQuality(q)} style={{flex:1,fontSize:10,fontWeight:700,border:`1px solid ${color}20`,background:`${color}10`,color,cursor:'pointer',padding:'5px 4px',borderRadius:7}}>{label}</button>
+                          ))}
+                        </div>
+                      </div>
+                    ):(
+                      <div>
+                        <label style={{fontSize:10,fontWeight:700,color:'#9898B5',display:'block',marginBottom:6,letterSpacing:'0.05em',textTransform:'uppercase'}}>Target Size (KB)</label>
+                        <InputField value={targetSizeInput} onChange={setTargetSizeInput} placeholder="e.g. 150"/>
                       </div>
                     )}
                   </div>
@@ -712,47 +763,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* EXPORT */}
-                {activeTab==='compress'&&(
-                  <div style={{display:'flex',flexDirection:'column',gap:16}} className="animate-fade-in">
-                    <div>
-                      <label style={{fontSize:10,fontWeight:700,color:'#9898B5',display:'block',marginBottom:6,letterSpacing:'0.05em',textTransform:'uppercase'}}>Output Format</label>
-                      <div style={{position:'relative'}}>
-                        <select value={saveFormat} onChange={e=>setSaveFormat(e.target.value)} style={{width:'100%',padding:'9px 32px 9px 12px',background:'#F7F7FB',border:'1px solid #E4E4EF',borderRadius:9,fontSize:13,fontWeight:700,color:'#111128',outline:'none',cursor:'pointer',fontFamily:'inherit'}}
-                          onFocus={e=>{e.target.style.borderColor='#5B5BD6';e.target.style.background='#fff';}} onBlur={e=>{e.target.style.borderColor='#E4E4EF';e.target.style.background='#F7F7FB';}}>
-                          <option value="Original">Same as Original</option>
-                          <option value="JPG">JPEG (JPG)</option>
-                          <option value="PNG">PNG</option>
-                          <option value="WebP">WebP</option>
-                        </select>
-                        <svg style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none',color:'#9898B5'}} width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" d="M19 9l-7 7-7-7"/></svg>
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{fontSize:10,fontWeight:700,color:'#9898B5',display:'block',marginBottom:6,letterSpacing:'0.05em',textTransform:'uppercase'}}>Compression Mode</label>
-                      <SegControl options={[{value:'quality',label:'By Quality'},{value:'size',label:'By Size (KB)'}]} value={compressMode} onChange={setCompressMode}/>
-                    </div>
-                    {compressMode==='quality'?(
-                      <div>
-                        <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
-                          <label style={{fontSize:10,fontWeight:700,color:'#9898B5',letterSpacing:'0.05em',textTransform:'uppercase'}}>Quality</label>
-                          <span style={{fontSize:18,fontWeight:900,color:compressQuality>70?'#5B5BD6':compressQuality>40?'#F59E0B':'#EF4444'}}>{compressQuality}%</span>
-                        </div>
-                        <input type="range" min="5" max="100" value={compressQuality} onChange={e=>setCompressQuality(parseInt(e.target.value,10))} style={{width:'100%'}}/>
-                        <div style={{display:'flex',justifyContent:'space-between',marginTop:8,gap:4}}>
-                          {[{label:'Smallest',q:15,color:'#EF4444'},{label:'Balanced',q:70,color:'#F59E0B'},{label:'Best',q:95,color:'#10B981'}].map(({label,q,color})=>(
-                            <button key={label} type="button" onClick={()=>setCompressQuality(q)} style={{flex:1,fontSize:10,fontWeight:700,border:`1px solid ${color}20`,background:`${color}10`,color,cursor:'pointer',padding:'5px 4px',borderRadius:7}}>{label}</button>
-                          ))}
-                        </div>
-                      </div>
-                    ):(
-                      <div>
-                        <label style={{fontSize:10,fontWeight:700,color:'#9898B5',display:'block',marginBottom:6,letterSpacing:'0.05em',textTransform:'uppercase'}}>Target Size (KB)</label>
-                        <InputField value={targetSizeInput} onChange={setTargetSizeInput} placeholder="e.g. 150"/>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Export tab removed — its content now lives in Resize tab above */}
               </div>
 
               {errorMsg&&(

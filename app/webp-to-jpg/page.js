@@ -291,14 +291,14 @@ export default function WebpToJpgPage() {
                       {resizeMode === 'custom' && (
                         <div className="grid grid-cols-2 gap-2 mt-2">
                           <input 
-                            type="number" 
+                            type="text" inputMode="numeric" pattern="[0-9]*" 
                             placeholder="Width (px)" 
                             value={customWidth} 
                             onChange={(e) => setCustomWidth(e.target.value)}
                             className="w-full text-xs border rounded px-2 py-1"
                           />
                           <input 
-                            type="number" 
+                            type="text" inputMode="numeric" pattern="[0-9]*" 
                             placeholder="Height (px)" 
                             value={customHeight} 
                             onChange={(e) => setCustomHeight(e.target.value)}

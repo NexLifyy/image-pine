@@ -594,7 +594,7 @@ export default function CropJpgPage() {
                       <div>
                         <label className="block text-[9px] font-bold text-gray-400 mb-1">Width (px)</label>
                         <input
-                          type="number"
+                          type="text" inputMode="numeric" pattern="[0-9]*"
                           value={getNaturalCoord(cropBox.width, 'width')}
                           onChange={(e) => handleNumberInput('width', e.target.value)}
                           className="w-full text-xs font-semibold text-textmain border border-bordercolor rounded-lg bg-white px-3 py-2.5 focus:outline-none focus:border-primary"
@@ -603,7 +603,7 @@ export default function CropJpgPage() {
                       <div>
                         <label className="block text-[9px] font-bold text-gray-400 mb-1">Height (px)</label>
                         <input
-                          type="number"
+                          type="text" inputMode="numeric" pattern="[0-9]*"
                           value={getNaturalCoord(cropBox.height, 'height')}
                           onChange={(e) => handleNumberInput('height', e.target.value)}
                           className="w-full text-xs font-semibold text-textmain border border-bordercolor rounded-lg bg-white px-3 py-2.5 focus:outline-none focus:border-primary"
@@ -638,7 +638,7 @@ export default function CropJpgPage() {
                       <div>
                         <label className="block text-[9px] font-bold text-gray-400 mb-1">Position (X)</label>
                         <input
-                          type="number"
+                          type="text" inputMode="numeric" pattern="[0-9]*"
                           value={getNaturalCoord(cropBox.x, 'width')}
                           onChange={(e) => handleNumberInput('x', e.target.value)}
                           className="w-full text-xs font-semibold text-textmain border border-bordercolor rounded-lg bg-white px-3 py-2 focus:outline-none focus:border-primary"
@@ -647,7 +647,7 @@ export default function CropJpgPage() {
                       <div>
                         <label className="block text-[9px] font-bold text-gray-400 mb-1">Position (Y)</label>
                         <input
-                          type="number"
+                          type="text" inputMode="numeric" pattern="[0-9]*"
                           value={getNaturalCoord(cropBox.y, 'height')}
                           onChange={(e) => handleNumberInput('y', e.target.value)}
                           className="w-full text-xs font-semibold text-textmain border border-bordercolor rounded-lg bg-white px-3 py-2 focus:outline-none focus:border-primary"

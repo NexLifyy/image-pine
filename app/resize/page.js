@@ -291,14 +291,14 @@ export default function ResizePage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div>
                     <span style={label}>Width (px)</span>
-                    <input type="number" value={widthInput} onChange={e => handleWidthChange(e.target.value)}
+                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={widthInput} onChange={e => handleWidthChange(e.target.value)}
                       placeholder="Width" style={inputStyle}
                       onFocus={e => e.target.style.borderColor = '#5B5BD6'}
                       onBlur={e => e.target.style.borderColor = '#E4E4EF'} />
                   </div>
                   <div>
                     <span style={label}>Height (px)</span>
-                    <input type="number" value={heightInput} onChange={e => handleHeightChange(e.target.value)}
+                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={heightInput} onChange={e => handleHeightChange(e.target.value)}
                       placeholder="Height" style={inputStyle}
                       onFocus={e => e.target.style.borderColor = '#5B5BD6'}
                       onBlur={e => e.target.style.borderColor = '#E4E4EF'} />
@@ -333,7 +333,7 @@ export default function ResizePage() {
               <div>
                 <span style={label}>Target File Size (optional)</span>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <input type="number" value={targetSizeInput} onChange={e => setTargetSizeInput(e.target.value)}
+                  <input type="text" inputMode="numeric" pattern="[0-9]*" value={targetSizeInput} onChange={e => setTargetSizeInput(e.target.value)}
                     placeholder="e.g. 150" style={{ ...inputStyle, flex: 1 }}
                     onFocus={e => e.target.style.borderColor = '#5B5BD6'}
                     onBlur={e => e.target.style.borderColor = '#E4E4EF'} />
