@@ -22,7 +22,7 @@ Route (app)                              Size     First Load JS
 ┌ ○ /                                    11 kB           116 kB
 ├ ○ /_not-found                          876 B          88.3 kB
 ├ ○ /bulk-resize                         5.47 kB         114 kB
-├ ○ /collage                             4.06 kB         112 kB
+├ ○ /collage                             4.3 kB          112 kB
 ├ ○ /compress                            4.36 kB         112 kB
 ├ ○ /compress-gif                        4.16 kB         112 kB
 ├ ○ /compress-jpg                        4.2 kB          112 kB

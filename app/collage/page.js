@@ -169,14 +169,30 @@ export default function CollagePage() {
                 <button onClick={() => handleFileSelect([])} className="text-xs font-bold text-red-500 hover:underline">Clear All</button>
               )}
             </div>
-            <UploadBox onFileSelect={(newFiles) => {
-                const merged = [...files, ...newFiles.filter(nf => !files.find(f => f.name === nf.name))].slice(0, 6);
-                handleFileSelect(merged);
-              }}
-              acceptedFormats={['.jpg', '.jpeg', '.png', '.webp']}
-              multiple={true}
-              buttonLabel="Add More Images"
-            />
+            {/* Add More — compact button, NOT a full UploadBox inside a narrow column */}
+            <label style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              width: '100%', padding: '11px', fontSize: 12, fontWeight: 700,
+              border: '2px dashed #D1D1E4', borderRadius: 12,
+              background: '#F7F7FB', color: '#5B5BD6',
+              cursor: 'pointer', transition: 'all 0.2s ease',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#5B5BD6'; e.currentTarget.style.background = '#EDEDFB'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#D1D1E4'; e.currentTarget.style.background = '#F7F7FB'; }}
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              Add More Images
+              <input type="file" accept=".jpg,.jpeg,.png,.webp" multiple style={{ display: 'none' }}
+                onChange={e => {
+                  const newFiles = Array.from(e.target.files || []).map(f =>
+                    Object.assign(f, { preview: URL.createObjectURL(f), id: Math.random().toString(36).slice(2, 9) })
+                  );
+                  const merged = [...files, ...newFiles.filter(nf => !files.find(f => f.name === nf.name))].slice(0, 6);
+                  handleFileSelect(merged);
+                  e.target.value = '';
+                }}
+              />
+            </label>
             </div>
 
             {/* Middle Column: Large Preview */}
