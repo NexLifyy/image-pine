@@ -543,10 +543,10 @@ export default function Home() {
           </div>
 
           {/* 3-Col Grid */}
-          <div style={{display:'grid',gridTemplateColumns:'220px 1fr 290px',gap:16,alignItems:'start'}}>
+          <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_290px] gap-4" style={{ alignItems: 'start' }}>
 
             {/* COL 1: Sidebar */}
-            <div style={{background:'#fff',border:'1px solid #E4E4EF',borderRadius:16,padding:14,boxShadow:'0 1px 4px rgba(0,0,0,0.05)',position:'sticky',top:76}}>
+            <div className="lg:sticky lg:top-[76px]" style={{background:'#fff',border:'1px solid #E4E4EF',borderRadius:16,padding:14,boxShadow:'0 1px 4px rgba(0,0,0,0.05)'}}>
               <p style={{fontSize:10,fontWeight:800,color:'#9898B5',letterSpacing:'0.08em',textTransform:'uppercase',margin:'0 0 10px'}}>Files ({files.length})</p>
               <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:480,overflowY:'auto'}}>
                 {files.map(file=>(
@@ -647,7 +647,7 @@ export default function Home() {
             </div>
 
             {/* COL 3: Controls */}
-            <div style={{background:'#fff',border:'1px solid #E4E4EF',borderRadius:16,boxShadow:'0 1px 4px rgba(0,0,0,0.05)',position:'sticky',top:76,overflow:'hidden'}}>
+            <div className="lg:sticky lg:top-[76px]" style={{background:'#fff',border:'1px solid #E4E4EF',borderRadius:16,boxShadow:'0 1px 4px rgba(0,0,0,0.05)',overflow:'hidden'}}>
               {/* Tabs */}
               <div style={{display:'flex',borderBottom:'1px solid #E4E4EF',padding:'0 4px'}}>
                 {[{id:'resize',label:'Resize'},{id:'rotate',label:'Rotate'},{id:'flip',label:'Flip'}].map(tab=>(

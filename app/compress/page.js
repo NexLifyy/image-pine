@@ -132,7 +132,7 @@ export default function CompressPage() {
         </div>
       ) : (
         /* ── Workspace ─────────────────────────────────────────── */
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5" style={{ alignItems: 'start' }}>
 
           {/* LEFT: big preview */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

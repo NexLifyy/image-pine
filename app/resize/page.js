@@ -175,7 +175,7 @@ export default function ResizePage() {
         </div>
       ) : (
         /* ── Workspace ─────────────────────────────────────────────── */
-        <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr 320px', gap: 20, alignItems: 'start' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_320px] gap-5" style={{ alignItems: 'start' }}>
 
           {/* LEFT COLUMN: Files List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
