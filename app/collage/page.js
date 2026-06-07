@@ -169,7 +169,14 @@ export default function CollagePage() {
                 <button onClick={() => handleFileSelect([])} className="text-xs font-bold text-red-500 hover:underline">Clear All</button>
               )}
             </div>
-            <UploadBox onFileSelect={handleFileSelect} acceptedFormats={['.jpg', '.jpeg', '.png', '.webp']} multiple={true} />
+            <UploadBox onFileSelect={(newFiles) => {
+                const merged = [...files, ...newFiles.filter(nf => !files.find(f => f.name === nf.name))].slice(0, 6);
+                handleFileSelect(merged);
+              }}
+              acceptedFormats={['.jpg', '.jpeg', '.png', '.webp']}
+              multiple={true}
+              buttonLabel="Add More Images"
+            />
             </div>
 
             {/* Middle Column: Large Preview */}

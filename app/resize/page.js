@@ -205,11 +205,33 @@ export default function ResizePage() {
                 ))}
               </div>
             </div>
-            {/* Add more */}
-            <UploadBox onFileSelect={(newFiles) => {
-              const merged = [...files, ...newFiles.filter(nf => !files.find(f => f.name === nf.name))];
-              setFiles(merged);
-            }} acceptedFormats={['.jpg', '.jpeg', '.png', '.webp', '.svg']} multiple={true} />
+            {/* Add more — compact button instead of full UploadBox */}
+            <button
+              type="button"
+              onClick={() => document.querySelector('input[type="file"]')?.click()}
+              style={{
+                width: '100%', padding: '10px', fontSize: 12, fontWeight: 700,
+                border: '2px dashed #D1D1E4', borderRadius: 12, background: '#F7F7FB',
+                color: '#5B5BD6', cursor: 'pointer', transition: 'all 0.2s ease',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#5B5BD6'; e.currentTarget.style.background = '#EDEDFB'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#D1D1E4'; e.currentTarget.style.background = '#F7F7FB'; }}
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              Add More Images
+            </button>
+            {/* Hidden file input for Add More */}
+            <input type="file" accept=".jpg,.jpeg,.png,.webp,.svg" multiple style={{ display: 'none' }}
+              onChange={e => {
+                const newFiles = Array.from(e.target.files || []).map(f =>
+                  Object.assign(f, { preview: URL.createObjectURL(f), id: Math.random().toString(36).slice(2,9) })
+                );
+                const merged = [...files, ...newFiles.filter(nf => !files.find(f => f.name === nf.name))];
+                setFiles(merged);
+                e.target.value = '';
+              }}
+            />
           </div>
 
           {/* MIDDLE COLUMN: Large Preview */}

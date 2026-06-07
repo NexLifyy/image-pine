@@ -79,11 +79,13 @@ export default function UploadBox({
           ? '0 0 0 5px rgba(91,91,214,0.08)'
           : '0 2px 20px rgba(0,0,0,0.06)',
         padding: '52px 28px',
+        minHeight: 305,
         cursor: 'pointer',
         transition: 'all 0.25s ease',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 18,
         width: '100%',
         boxSizing: 'border-box',
