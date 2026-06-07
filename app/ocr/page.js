@@ -1,0 +1,265 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from 'react';
+import UploadBox from '@/components/UploadBox';
+import { saveAs } from 'file-saver';
+import { saveHistory } from '@/lib/storage';
+import ToolPageShell from '@/components/ToolPageShell';
+import Tesseract from 'tesseract.js';
+
+const _FEATURES = [
+  { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round"><path d="M4 7V4a2 2 0 012-2h3m6 0h3a2 2 0 012 2v3m0 6v3a2 2 0 01-2 2h-3m-6 0H6a2 2 0 01-2-2v-3M9 8h6M9 12h6M9 16h4"/></svg>), title: 'Text Recognition', desc: 'Scan screenshots, documents, and photos to extract plain text instantly.' },
+  { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>), title: 'Multi-Language Support', desc: 'Default to English, with quick options for Spanish, French, German, or Chinese.' },
+  { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>), title: '100% Secure & Local', desc: 'OCR worker runs completely inside your browser. No server uploads.' },
+  { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>), title: 'Text Export', desc: 'Save your extracted text as a .txt document or copy with a single click.' }
+];
+
+const _STEPS = [
+  { n: '1', title: 'Upload Screenshot/Photo', desc: 'Select any image containing legible text.' },
+  { n: '2', title: 'Choose Language', desc: 'Select the primary language of the text in the image.' },
+  { n: '3', title: 'Run & Copy Text', desc: 'Wait a few seconds, then copy or download the text.' }
+];
+
+const _FAQS = [
+  { q: 'Is my document text safe?', a: 'Yes. The OCR parsing is done purely using Tesseract.js Web Workers inside your browser. Your images and text never traverse any network.' },
+  { q: 'Why does the first run take a bit longer?', a: 'Tesseract.js downloads the language model file (e.g. eng.traineddata) on the first run, which is cached in your browser indexDB for subsequent instantaneous loads.' },
+  { q: 'Can it scan handwritten text?', a: 'It performs best with printed fonts, clean documents, and UI screenshots. Handwritten text may have lower accuracy.' }
+];
+
+const LANGUAGES = [
+  { val: 'eng', label: 'English' },
+  { val: 'spa', label: 'Spanish (Español)' },
+  { val: 'fra', label: 'French (Français)' },
+  { val: 'deu', label: 'German (Deutsch)' },
+  { val: 'chi_sim', label: 'Chinese (简体中文)' }
+];
+
+export default function OcrPage() {
+  const [file, setFile] = useState(null);
+  const [lang, setLang] = useState('eng');
+  const [extractedText, setExtractedText] = useState('');
+  const [progressStatus, setProgressStatus] = useState('');
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const handleFileSelect = (selectedList) => {
+    if (selectedList.length > 0) {
+      setFile(selectedList[0]);
+      setExtractedText('');
+      setProgressStatus('');
+      setProgressPercent(0);
+      setErrorMsg('');
+    } else {
+      setFile(null);
+      setExtractedText('');
+    }
+  };
+
+  const runOcr = () => {
+    if (!file) return;
+
+    setIsProcessing(true);
+    setErrorMsg('');
+    setProgressStatus('Initializing Tesseract...');
+    setProgressPercent(0);
+
+    const imgSrc = file.preview || URL.createObjectURL(file);
+
+    Tesseract.recognize(
+      imgSrc,
+      lang,
+      {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            setProgressStatus('Recognizing text...');
+            setProgressPercent(Math.round(m.progress * 100));
+          } else {
+            setProgressStatus(m.status || 'Loading...');
+            setProgressPercent(0);
+          }
+        }
+      }
+    )
+      .then(({ data: { text } }) => {
+        setExtractedText(text || 'No text recognized in the image.');
+        setProgressStatus('Completed successfully!');
+        setProgressPercent(100);
+        setIsProcessing(false);
+        saveHistory('Image OCR Extractor', `${file.name.slice(0, 16)}_extracted.txt`);
+      })
+      .catch((err) => {
+        console.error(err);
+        setErrorMsg('Error extracting text. Make sure the image is readable.');
+        setIsProcessing(false);
+      });
+  };
+
+  // Run OCR automatically when a file is selected
+  useEffect(() => {
+    if (file) {
+      runOcr();
+    }
+  }, [file, lang]);
+
+  const copyToClipboard = () => {
+    if (!extractedText) return;
+    navigator.clipboard.writeText(extractedText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  const downloadTextFile = () => {
+    if (!extractedText) return;
+    const blob = new Blob([extractedText], { type: 'text/plain;charset=utf-8' });
+    const baseName = file.name.replace(/\.[^/.]+$/, '');
+    saveAs(blob, `${baseName}_extracted.txt`);
+  };
+
+  const formatSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  return (
+    <ToolPageShell
+      title="Image OCR Text Extractor"
+      subtitle="Extract text from screenshots, scanned documents, and photos. Runs locally in your browser with complete privacy."
+      features={_FEATURES}
+      steps={_STEPS}
+      faqs={_FAQS}
+      seoText="Free browser-based Image OCR text extractor. Extract text from screenshots and photos locally using Tesseract.js. Secure, private, and supports multiple languages."
+    >
+      <div className="flex flex-col gap-6">
+        {!file ? (
+          <div style={{ maxWidth: 680, margin: '0 auto', width: '100%' }}>
+            <UploadBox 
+              onFileSelect={handleFileSelect} 
+              acceptedFormats={['.jpg', '.jpeg', '.png', '.webp']}
+              multiple={false} 
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column: Image Preview & Lang select */}
+            <div className="lg:col-span-5" style={{ background: "#fff", border: "1px solid #E4E4EF", borderRadius: 20, padding: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.04)", height: "fit-content", display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="flex justify-between items-center pb-2 border-b border-bordercolor">
+                <h3 style={{ fontSize: 10, fontWeight: 800, color: "#9898B5", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Input Document
+                </h3>
+                <button onClick={() => handleFileSelect([])} className="text-xs font-bold text-red-500 hover:underline">
+                  Remove
+                </button>
+              </div>
+
+              {file.preview && (
+                <img
+                  src={file.preview}
+                  alt="OCR source document"
+                  className="w-full object-contain rounded-xl border border-bordercolor shadow-sm"
+                  style={{ maxHeight: 380 }}
+                />
+              )}
+
+              <div className="flex flex-col gap-1.5 pt-2 border-t border-bordercolor/40">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  Document Language
+                </label>
+                <select
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value)}
+                  className="w-full text-xs font-semibold text-textmain border border-bordercolor rounded-lg bg-lightbg/40 px-3 py-2.5 focus:outline-none focus:border-primary"
+                  disabled={isProcessing}
+                >
+                  {LANGUAGES.map((l) => (
+                    <option key={l.val} value={l.val}>{l.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Right Column: OCR Results & Progress */}
+            <div className="lg:col-span-7" style={{ background: "#fff", border: "1px solid #E4E4EF", borderRadius: 20, padding: "24px", boxShadow: "0 2px 12px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="flex justify-between items-center pb-2 border-b border-bordercolor">
+                <h4 style={{ fontSize: 10, fontWeight: 800, color: "#9898B5", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Extracted Text
+                </h4>
+                {extractedText && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={copyToClipboard}
+                      className="text-xs font-bold text-primary flex items-center gap-1 hover:underline"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                      </svg>
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+                    <button
+                      onClick={downloadTextFile}
+                      className="text-xs font-bold text-primary flex items-center gap-1 hover:underline"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download .txt
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {isProcessing ? (
+                <div className="flex flex-col items-center justify-center py-24 gap-4">
+                  <div className="flex items-center gap-2 text-xs text-primary font-semibold">
+                    <svg className="animate-spin h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    {progressStatus}
+                  </div>
+                  
+                  {progressPercent > 0 && (
+                    <div className="w-64 bg-gray-100 rounded-full h-2 overflow-hidden border border-bordercolor/40">
+                      <div 
+                        className="bg-primary h-full transition-all duration-300"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  )}
+                  {progressPercent > 0 && (
+                    <span className="text-[10px] text-gray-400 font-bold">{progressPercent}%</span>
+                  )}
+                </div>
+              ) : errorMsg ? (
+                <p className="text-xs text-red-500 font-semibold py-12 text-center">{errorMsg}</p>
+              ) : (
+                <textarea
+                  readOnly
+                  value={extractedText}
+                  placeholder="Extracted text will appear here..."
+                  className="w-full h-80 font-mono text-xs text-textmain border border-bordercolor/80 rounded-xl bg-lightbg/10 p-4 focus:outline-none resize-none leading-relaxed"
+                />
+              )}
+
+              {!isProcessing && !extractedText && !errorMsg && (
+                <div className="pt-2">
+                  <button
+                    onClick={runOcr}
+                    className="py-3 px-6 text-xs font-bold rounded-lg bg-primary text-white hover:bg-primary-dark transition-all duration-150"
+                  >
+                    Run OCR Text Extraction
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </ToolPageShell>
+  );
+}

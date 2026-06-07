@@ -47,7 +47,9 @@ export default function UploadBox({
         map['image/heic'] = ['.heic'];
         map['image/heif'] = ['.heif'];
       } else if (f === '.pdf') map['application/pdf'] = ['.pdf'];
-      else map['*/*'] = [f];
+      else {
+        map['application/octet-stream'] = [...(map['application/octet-stream'] || []), f];
+      }
     });
     return map;
   };

@@ -20,7 +20,8 @@
     "pdf-lib": "^1.17.1",
     "react": "^18",
     "react-dom": "^18",
-    "react-dropzone": "^15.0.0"
+    "react-dropzone": "^15.0.0",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.7",
