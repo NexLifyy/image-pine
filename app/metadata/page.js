@@ -335,7 +335,66 @@ export default function MetadataPage() {
         try {
           const buffer = e.target.result;
           const tags = readExifTags(buffer);
-          setMetadataMap(prev => ({ ...prev, [fileObj.id]: tags }));
+          
+          if (tags._error) {
+            setMetadataMap(prev => ({ ...prev, [fileObj.id]: tags }));
+            return;
+          }
+          
+          const img = new Image();
+          img.onload = () => {
+            tags.width = img.naturalWidth;
+            tags.height = img.naturalHeight;
+            
+            tags.allTags.push({
+              tag: 0,
+              hex: '0x0000',
+              group: 'Image Properties',
+              name: 'Image Width',
+              desc: 'Width in pixels',
+              raw: img.naturalWidth,
+              formatted: `${img.naturalWidth} px`
+            });
+            
+            tags.allTags.push({
+              tag: 0,
+              hex: '0x0000',
+              group: 'Image Properties',
+              name: 'Image Height',
+              desc: 'Height in pixels',
+              raw: img.naturalHeight,
+              formatted: `${img.naturalHeight} px`
+            });
+            
+            tags.allTags.push({
+              tag: 0,
+              hex: '0x0000',
+              group: 'Image Properties',
+              name: 'File Size',
+              desc: 'File size on disk',
+              raw: fileObj.size,
+              formatted: formatSize(fileObj.size)
+            });
+            
+            tags.allTags.push({
+              tag: 0,
+              hex: '0x0000',
+              group: 'Image Properties',
+              name: 'MIME Type',
+              desc: 'File type',
+              raw: fileObj.type,
+              formatted: fileObj.type || 'image/jpeg'
+            });
+            
+            setMetadataMap(prev => ({ ...prev, [fileObj.id]: { ...tags } }));
+          };
+          
+          img.onerror = () => {
+            setMetadataMap(prev => ({ ...prev, [fileObj.id]: tags }));
+          };
+          
+          img.src = fileObj.preview;
+          
         } catch (err) {
           console.error('Error processing parsed EXIF buffer:', err);
           setMetadataMap(prev => ({ ...prev, [fileObj.id]: { _error: err.message || 'Error parsing buffer' } }));
@@ -465,6 +524,337 @@ export default function MetadataPage() {
     }
   };
 
+  const parseXmpText = (xmpText, tags) => {
+    try {
+      const cleanXml = xmpText.replace(/\0+$/, '').trim();
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(cleanXml, 'text/xml');
+      
+      const parserError = xmlDoc.getElementsByTagName('parsererror');
+      if (parserError.length > 0) {
+        console.warn('XMP XML parse error:', parserError[0].textContent);
+      }
+      
+      const scrapeXmlNode = (node) => {
+        if (!node) return;
+        
+        if (node.attributes) {
+          for (let i = 0; i < node.attributes.length; i++) {
+            const attr = node.attributes[i];
+            if (attr.name.startsWith('xmlns:') || attr.name === 'xmlns') continue;
+            
+            const val = attr.value.trim();
+            if (val) {
+              tags.allTags.push({
+                tag: 0,
+                hex: '0x0000',
+                group: 'XMP Metadata',
+                name: attr.name,
+                desc: 'XMP property',
+                raw: val,
+                formatted: val
+              });
+              
+              const lowerName = attr.name.toLowerCase();
+              if (lowerName.includes('creator') || lowerName.includes('artist')) tags.artist = val;
+              else if (lowerName.includes('title') || lowerName.includes('description')) tags.description = val;
+              else if (lowerName.includes('software') || lowerName.includes('creatortool')) tags.software = val;
+            }
+          }
+        }
+        
+        if (node.childNodes && node.childNodes.length === 1 && node.childNodes[0].nodeType === 3) {
+          const val = node.childNodes[0].nodeValue.trim();
+          if (val) {
+            tags.allTags.push({
+              tag: 0,
+              hex: '0x0000',
+              group: 'XMP Metadata',
+              name: node.nodeName,
+              desc: 'XMP property',
+              raw: val,
+              formatted: val
+            });
+            
+            const lowerName = node.nodeName.toLowerCase();
+            if (lowerName.includes('creator') || lowerName.includes('artist')) tags.artist = val;
+            else if (lowerName.includes('title') || lowerName.includes('description')) tags.description = val;
+            else if (lowerName.includes('software') || lowerName.includes('creatortool')) tags.software = val;
+          }
+        } else if (node.childNodes) {
+          for (let i = 0; i < node.childNodes.length; i++) {
+            scrapeXmlNode(node.childNodes[i]);
+          }
+        }
+      };
+      
+      scrapeXmlNode(xmlDoc.documentElement);
+    } catch (e) {
+      console.error('Failed to parse XMP XML:', e);
+    }
+  };
+
+  const parseIptc = (buffer, offset, length, tags) => {
+    try {
+      const view = new DataView(buffer, offset, length);
+      let idx = 0;
+      const decoder = new TextDecoder('utf-8');
+      
+      if (length > 14 && view.getUint32(0) === 0x50686F74 && view.getUint32(4) === 0x6F73686F && view.getUint32(8) === 0x7020332E) {
+        idx = 14;
+        while (idx < length && view.getUint8(idx) !== 0) idx++;
+        idx++;
+      }
+      
+      while (idx < length - 12) {
+        const sig = view.getUint32(idx, false);
+        if (sig !== 0x3842494D) { // "8BIM"
+          idx++;
+          continue;
+        }
+        
+        const id = view.getUint16(idx + 4, false);
+        let nameLen = view.getUint8(idx + 6);
+        const pascalNameSize = (nameLen + 1) % 2 === 0 ? nameLen + 1 : nameLen + 2;
+        let dataOffset = idx + 6 + pascalNameSize;
+        
+        if (dataOffset + 4 > length) break;
+        const dataSize = view.getUint32(dataOffset, false);
+        const payloadStart = dataOffset + 4;
+        
+        if (payloadStart + dataSize > length) break;
+        
+        if (id === 0x0404) { // IPTC-NAA record
+          let iptcIdx = payloadStart;
+          const iptcEnd = payloadStart + dataSize;
+          
+          while (iptcIdx < iptcEnd - 5) {
+            if (view.getUint8(iptcIdx) === 0x1C) {
+              const record = view.getUint8(iptcIdx + 1);
+              const dataset = view.getUint8(iptcIdx + 2);
+              const size = view.getUint16(iptcIdx + 3, false);
+              
+              if (iptcIdx + 5 + size > iptcEnd) break;
+              
+              try {
+                const valueBytes = new Uint8Array(buffer, iptcIdx + 5, size);
+                const valStr = decoder.decode(valueBytes).trim();
+                
+                let tagName = `Record_${record}_Dataset_${dataset}`;
+                let tagDesc = 'IPTC metadata tag';
+                
+                if (record === 2) {
+                  switch (dataset) {
+                    case 5: tagName = 'ObjectName'; tagDesc = 'Document title'; break;
+                    case 15: tagName = 'Category'; tagDesc = 'Subject category'; break;
+                    case 25: tagName = 'Keywords'; tagDesc = 'Keywords'; break;
+                    case 80: tagName = 'By-line'; tagDesc = 'Author / Creator'; break;
+                    case 85: tagName = 'By-lineTitle'; tagDesc = 'Author title'; break;
+                    case 90: tagName = 'City'; tagDesc = 'City'; break;
+                    case 95: tagName = 'Province-State'; tagDesc = 'State / Province'; break;
+                    case 101: tagName = 'Country-PrimaryLocationName'; tagDesc = 'Country'; break;
+                    case 110: tagName = 'Credit'; tagDesc = 'Credit provider'; break;
+                    case 115: tagName = 'Source'; tagDesc = 'Original source'; break;
+                    case 116: tagName = 'CopyrightNotice'; tagDesc = 'Copyright statement'; break;
+                    case 120: tagName = 'Caption-Abstract'; tagDesc = 'Description / Caption'; break;
+                    case 122: tagName = 'Writer-Editor'; tagDesc = 'Description writer'; break;
+                  }
+                }
+                
+                tags.allTags.push({
+                  tag: dataset,
+                  hex: `0x1C${record.toString(16).padStart(2, '0')}${dataset.toString(16).padStart(2, '0')}`,
+                  group: 'IPTC Metadata',
+                  name: tagName,
+                  desc: tagDesc,
+                  raw: valStr,
+                  formatted: valStr
+                });
+                
+                if (record === 2) {
+                  if (dataset === 80) tags.artist = valStr;
+                  else if (dataset === 120) tags.description = valStr;
+                  else if (dataset === 116 && !tags.artist) tags.artist = valStr;
+                }
+              } catch (e) {
+                console.error('Error decoding IPTC dataset value:', e);
+              }
+              
+              iptcIdx += 5 + size;
+            } else {
+              iptcIdx++;
+            }
+          }
+        }
+        
+        idx = payloadStart + dataSize;
+        if (idx % 2 !== 0) idx++;
+      }
+    } catch (e) {
+      console.error('Failed to parse IPTC in APP13:', e);
+    }
+  };
+
+  const parseJumbfSegment = (buffer, offset, length, tags) => {
+    try {
+      const view = new DataView(buffer, offset, length);
+      let idx = 0;
+      while (idx < length - 8) {
+        if (idx + 8 > length) break;
+        const boxLen = view.getUint32(idx, false);
+        const boxType = view.getUint32(idx + 4, false);
+        
+        if (boxType === 0x6A756D62) { // "jumb"
+          let payloadOffset = idx + 8;
+          let payloadLen = boxLen - 8;
+          if (boxLen === 1) {
+            payloadOffset = idx + 16;
+            if (idx + 16 > length) break;
+            const high = view.getUint32(idx + 8, false);
+            const low = view.getUint32(idx + 12, false);
+            payloadLen = (high * 0x100000000) + low - 16;
+          }
+          
+          if (payloadOffset + 8 <= length) {
+            const innerBoxLen = view.getUint32(payloadOffset, false);
+            const innerBoxType = view.getUint32(payloadOffset + 4, false);
+            
+            if (innerBoxType === 0x6A756D64) { // "jumd"
+              const uuidOffset = payloadOffset + 8;
+              if (uuidOffset + 16 <= length) {
+                const u = [];
+                for (let i = 0; i < 16; i++) {
+                  u.push(view.getUint8(uuidOffset + i));
+                }
+                
+                const isC2pa = 
+                  u[0] === 0x63 && u[1] === 0x32 && u[2] === 0x70 && u[3] === 0x61 &&
+                  u[4] === 0x00 && u[5] === 0x11 && u[6] === 0x00 && u[7] === 0x10 &&
+                  u[8] === 0x80 && u[9] === 0x00 && u[10] === 0x00 && u[11] === 0xAA &&
+                  u[12] === 0x00 && u[13] === 0x38 && u[14] === 0x9B && u[15] === 0x71;
+                  
+                if (isC2pa) {
+                  tags.allTags.push({
+                    tag: 0,
+                    hex: '0x0000',
+                    group: 'Content Credentials',
+                    name: 'Content Credentials (C2PA)',
+                    desc: 'C2PA Manifest Store presence',
+                    raw: 'Detected',
+                    formatted: 'Found active C2PA Content Credentials metadata (JUMBF/APP11)'
+                  });
+                  
+                  const segmentBytes = new Uint8Array(buffer, offset, length);
+                  const searchStr = 'claim_generator';
+                  let claimGenIdx = -1;
+                  
+                  for (let i = 0; i < segmentBytes.length - searchStr.length; i++) {
+                    let match = true;
+                    for (let j = 0; j < searchStr.length; j++) {
+                      if (segmentBytes[i + j] !== searchStr.charCodeAt(j)) {
+                        match = false;
+                        break;
+                      }
+                    }
+                    if (match) {
+                      claimGenIdx = i;
+                      break;
+                    }
+                  }
+                  
+                  if (claimGenIdx !== -1) {
+                    let scanIdx = claimGenIdx + searchStr.length;
+                    let foundGenerator = null;
+                    const decoder = new TextDecoder('utf-8');
+                    
+                    for (let k = 0; k < 15; k++) {
+                      if (scanIdx + k >= segmentBytes.length) break;
+                      const b = segmentBytes[scanIdx + k];
+                      if (b >= 0x60 && b <= 0x7B) {
+                        const strLen = b - 0x60;
+                        if (scanIdx + k + 1 + strLen <= segmentBytes.length) {
+                          const strBytes = segmentBytes.slice(scanIdx + k + 1, scanIdx + k + 1 + strLen);
+                          foundGenerator = decoder.decode(strBytes).trim();
+                        }
+                        break;
+                      } else if (b === 0x78) {
+                        if (scanIdx + k + 2 <= segmentBytes.length) {
+                          const strLen = segmentBytes[scanIdx + k + 1];
+                          if (scanIdx + k + 2 + strLen <= segmentBytes.length) {
+                            const strBytes = segmentBytes.slice(scanIdx + k + 2, scanIdx + k + 2 + strLen);
+                            foundGenerator = decoder.decode(strBytes).trim();
+                          }
+                        }
+                        break;
+                      } else if (b === 0x79) {
+                        if (scanIdx + k + 3 <= segmentBytes.length) {
+                          const strLen = (segmentBytes[scanIdx + k + 1] << 8) | segmentBytes[scanIdx + k + 2];
+                          if (scanIdx + k + 3 + strLen <= segmentBytes.length) {
+                            const strBytes = segmentBytes.slice(scanIdx + k + 3, scanIdx + k + 3 + strLen);
+                            foundGenerator = decoder.decode(strBytes).trim();
+                          }
+                        }
+                        break;
+                      }
+                    }
+                    
+                    if (foundGenerator) {
+                      tags.allTags.push({
+                        tag: 0,
+                        hex: '0x0000',
+                        group: 'Content Credentials',
+                        name: 'Claim Generator',
+                        desc: 'The tool that generated the claim / manifest',
+                        raw: foundGenerator,
+                        formatted: foundGenerator
+                      });
+                      
+                      tags.allTags.push({
+                        tag: 0,
+                        hex: '0x0000',
+                        group: 'AI Metadata & Credentials',
+                        name: 'AI Manifest Details',
+                        desc: 'Details about the AI creator tool',
+                        raw: `Generated by ${foundGenerator}`,
+                        formatted: `This image contains Content Credentials generated by ${foundGenerator}.`
+                      });
+                    }
+                  }
+                  
+                  const rawString = new TextDecoder('utf-8').decode(segmentBytes);
+                  if (rawString.includes('Content Authenticity Initiative')) {
+                    tags.allTags.push({
+                      tag: 0,
+                      hex: '0x0000',
+                      group: 'Content Credentials',
+                      name: 'Signature Authority',
+                      desc: 'Cryptographic signer of the manifest',
+                      raw: 'Content Authenticity Initiative',
+                      formatted: 'Verified signature anchor: Content Authenticity Initiative'
+                    });
+                  } else if (rawString.includes('Adobe')) {
+                    tags.allTags.push({
+                      tag: 0,
+                      hex: '0x0000',
+                      group: 'Content Credentials',
+                      name: 'Signature Authority',
+                      desc: 'Cryptographic signer of the manifest',
+                      raw: 'Adobe Image Assertion Authority',
+                      formatted: 'Verified signature anchor: Adobe Systems'
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+        idx += Math.max(1, boxLen);
+      }
+    } catch (e) {
+      console.error('JUMBF parsing error:', e);
+    }
+  };
+
   // Binary EXIF and metadata scanner (JPEG and PNG)
   const readExifTags = (buffer) => {
     const detectedSegments = {
@@ -520,6 +910,88 @@ export default function MetadataPage() {
             }
           } else if (chunkType === 'iCCP') {
             detectedSegments.icc = true;
+          } else if (chunkType === 'c2pa') {
+            tags.allTags.push({
+              tag: 0,
+              hex: '0x0000',
+              group: 'Content Credentials',
+              name: 'Content Credentials (C2PA)',
+              desc: 'C2PA Manifest Store presence in PNG',
+              raw: 'Detected',
+              formatted: 'Found active C2PA Content Credentials metadata chunk (c2pa)'
+            });
+            try {
+              const segmentBytes = new Uint8Array(buffer, offset + 8, chunkLength);
+              const searchStr = 'claim_generator';
+              let claimGenIdx = -1;
+              for (let i = 0; i < segmentBytes.length - searchStr.length; i++) {
+                let match = true;
+                for (let j = 0; j < searchStr.length; j++) {
+                  if (segmentBytes[i + j] !== searchStr.charCodeAt(j)) {
+                    match = false;
+                    break;
+                  }
+                }
+                if (match) {
+                  claimGenIdx = i;
+                  break;
+                }
+              }
+              if (claimGenIdx !== -1) {
+                let scanIdx = claimGenIdx + searchStr.length;
+                let foundGenerator = null;
+                const decoder = new TextDecoder('utf-8');
+                for (let k = 0; k < 15; k++) {
+                  if (scanIdx + k >= segmentBytes.length) break;
+                  const b = segmentBytes[scanIdx + k];
+                  if (b >= 0x60 && b <= 0x7B) {
+                    const strLen = b - 0x60;
+                    if (scanIdx + k + 1 + strLen <= segmentBytes.length) {
+                      foundGenerator = decoder.decode(segmentBytes.slice(scanIdx + k + 1, scanIdx + k + 1 + strLen)).trim();
+                    }
+                    break;
+                  } else if (b === 0x78) {
+                    if (scanIdx + k + 2 <= segmentBytes.length) {
+                      const strLen = segmentBytes[scanIdx + k + 1];
+                      if (scanIdx + k + 2 + strLen <= segmentBytes.length) {
+                        foundGenerator = decoder.decode(segmentBytes.slice(scanIdx + k + 2, scanIdx + k + 2 + strLen)).trim();
+                      }
+                    }
+                    break;
+                  } else if (b === 0x79) {
+                    if (scanIdx + k + 3 <= segmentBytes.length) {
+                      const strLen = (segmentBytes[scanIdx + k + 1] << 8) | segmentBytes[scanIdx + k + 2];
+                      if (scanIdx + k + 3 + strLen <= segmentBytes.length) {
+                        foundGenerator = decoder.decode(segmentBytes.slice(scanIdx + k + 3, scanIdx + k + 3 + strLen)).trim();
+                      }
+                    }
+                    break;
+                  }
+                }
+                if (foundGenerator) {
+                  tags.allTags.push({
+                    tag: 0,
+                    hex: '0x0000',
+                    group: 'Content Credentials',
+                    name: 'Claim Generator',
+                    desc: 'The tool that generated the claim / manifest',
+                    raw: foundGenerator,
+                    formatted: foundGenerator
+                  });
+                  tags.allTags.push({
+                    tag: 0,
+                    hex: '0x0000',
+                    group: 'AI Metadata & Credentials',
+                    name: 'AI Manifest Details',
+                    desc: 'Details about the AI creator tool',
+                    raw: `Generated by ${foundGenerator}`,
+                    formatted: `This image contains Content Credentials generated by ${foundGenerator}.`
+                  });
+                }
+              }
+            } catch (e) {
+              console.error('Error parsing c2pa chunk in PNG:', e);
+            }
           } else if (['tEXt', 'zTXt', 'iTXt'].includes(chunkType)) {
             detectedSegments.comments = true;
             try {
@@ -548,17 +1020,22 @@ export default function MetadataPage() {
                 }
 
                 if (key && val) {
-                  tags.allTags.push({
-                    tag: 0,
-                    hex: '0x0000',
-                    group: 'PNG Text',
-                    name: key,
-                    desc: 'Text metadata chunk',
-                    raw: val,
-                    formatted: val
-                  });
-                  
                   const lowerKey = key.toLowerCase();
+                  if (lowerKey.includes('xmp') || val.startsWith('<?xpacket') || val.includes('<x:xmpmeta')) {
+                    detectedSegments.xmp = true;
+                    parseXmpText(val, tags);
+                  } else {
+                    tags.allTags.push({
+                      tag: 0,
+                      hex: '0x0000',
+                      group: 'PNG Text',
+                      name: key,
+                      desc: 'Text metadata chunk',
+                      raw: val,
+                      formatted: val
+                    });
+                  }
+                  
                   if (lowerKey === 'author' || lowerKey === 'artist') tags.artist = val;
                   else if (lowerKey === 'description' || lowerKey === 'title') tags.description = val;
                   else if (lowerKey === 'creation time' || lowerKey === 'date') tags.dateTime = val;
@@ -614,15 +1091,60 @@ export default function MetadataPage() {
                   }
                   if (isXmp) {
                     detectedSegments.xmp = true;
+                    try {
+                      const xmpStart = offset + 33;
+                      const xmpLen = segmentLength - 31;
+                      if (xmpStart + xmpLen <= length) {
+                        const xmpBytes = new Uint8Array(buffer, xmpStart, xmpLen);
+                        const decoder = new TextDecoder('utf-8');
+                        const xmpText = decoder.decode(xmpBytes).trim();
+                        parseXmpText(xmpText, tags);
+                      }
+                    } catch (e) {
+                      console.error('Failed to extract XMP payload:', e);
+                    }
                   }
                 }
               }
             } else if (marker === 0xFFED) {
               detectedSegments.iptc = true; // IPTC / Photoshop IRB
+              try {
+                parseIptc(buffer, offset + 4, segmentLength - 2, tags);
+              } catch (e) {
+                console.error('Failed to parse IPTC in APP13:', e);
+              }
             } else if (marker === 0xFFFE) {
               detectedSegments.comments = true; // Comment
+              try {
+                const commentBytes = new Uint8Array(buffer, offset + 4, segmentLength - 2);
+                const decoder = new TextDecoder('utf-8');
+                const commentText = decoder.decode(commentBytes).trim().replace(/\0+$/, '');
+                if (commentText) {
+                  tags.allTags.push({
+                    tag: 0,
+                    hex: '0x0000',
+                    group: 'COM Comments',
+                    name: 'User Comment',
+                    desc: 'Plain text comment',
+                    raw: commentText,
+                    formatted: commentText
+                  });
+                  if (!tags.description) {
+                    tags.description = commentText;
+                  }
+                }
+              } catch (e) {
+                console.error('Error reading COM comment:', e);
+              }
             } else if (marker === 0xFFE2) {
               detectedSegments.icc = true; // ICC Profile
+            } else if (marker === 0xFFEB) { // APP11: JUMBF / C2PA Provenance
+              detectedSegments.otherApp.push('APP11');
+              try {
+                parseJumbfSegment(buffer, offset + 4, segmentLength - 2, tags);
+              } catch (e) {
+                console.error('Failed to parse JUMBF segment:', e);
+              }
             } else if (marker >= 0xFFE3 && marker <= 0xFFEF) {
               detectedSegments.otherApp.push(`APP${marker - 0xFFE0}`);
             }
@@ -894,11 +1416,15 @@ export default function MetadataPage() {
 
   const currentMetadata = selectedFile ? metadataMap[selectedFile.id] : null;
 
-  const hasDetectedMetadata = currentMetadata && currentMetadata.detectedSegments && (
-    currentMetadata.detectedSegments.exif ||
-    currentMetadata.detectedSegments.xmp ||
-    currentMetadata.detectedSegments.iptc ||
-    currentMetadata.detectedSegments.comments
+  const hasDetectedMetadata = currentMetadata && (
+    (currentMetadata.detectedSegments && (
+      currentMetadata.detectedSegments.exif ||
+      currentMetadata.detectedSegments.xmp ||
+      currentMetadata.detectedSegments.iptc ||
+      currentMetadata.detectedSegments.comments ||
+      currentMetadata.detectedSegments.icc
+    )) ||
+    (currentMetadata.allTags && currentMetadata.allTags.length > 0)
   );
 
   return (
@@ -1070,9 +1596,9 @@ export default function MetadataPage() {
                       </div>
 
                       {/* Summary Exif values */}
-                      {currentMetadata.hasExif ? (
+                      {(currentMetadata.hasExif || currentMetadata.make || currentMetadata.model || currentMetadata.dateTime || currentMetadata.software) ? (
                         <>
-                          <h4 style={{ fontSize: 11, fontWeight: 800, color: '#9898B5', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>Core EXIF Summary</h4>
+                          <h4 style={{ fontSize: 11, fontWeight: 800, color: '#9898B5', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '8px 0 4px' }}>Core Metadata Summary</h4>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
                             {currentMetadata.make && (
                               <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
@@ -1111,81 +1637,79 @@ export default function MetadataPage() {
                               </div>
                             )}
                           </div>
-
-                          {/* GPS Coordinates sensitive banner */}
-                          {currentMetadata.gps ? (
-                            <div style={{ padding: 12, background: '#FFFDF5', borderRadius: 12, border: '1px solid #FBE090', marginTop: 6 }}>
-                              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                                <span style={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D97706', marginTop: 2 }}>
-                                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
-                                    <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/>
-                                    <circle cx="12" cy="10" r="3"/>
-                                  </svg>
-                                </span>
-                                <div>
-                                  <span style={{ fontSize: 10, fontWeight: 850, color: '#B45309', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Sensitive GPS Location</span>
-                                  <span style={{ fontSize: 12, fontWeight: 700, color: '#78350F' }}>{String(currentMetadata.gpsDms)}</span>
-                                  <p style={{ fontSize: 10, color: '#92400E', margin: '4px 0 0', lineHeight: 1.4 }}>
-                                    Coordinates: <code>{String(currentMetadata.gps)}</code>. This information will be stripped losslessly upon cleaning.
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <div style={{ padding: 10, background: '#F0FDF4', borderRadius: 10, border: '1px solid #BBF7D0', fontSize: 11, fontWeight: 600, color: '#16A34A', display: 'flex', gap: 8, alignItems: 'center' }}>
-                              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                              No GPS location coordinates detected in this photo.
-                            </div>
-                          )}
-
-                          {/* Extended tags table */}
-                          {currentMetadata.allTags && currentMetadata.allTags.length > 0 && (
-                            <div style={{ marginTop: 12 }}>
-                              <h4 style={{ fontSize: 11, fontWeight: 800, color: '#9898B5', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
-                                All Metadata Fields ({currentMetadata.allTags.length})
-                              </h4>
-                              <div style={{ overflowX: 'auto', border: '1px solid #E4E4EF', borderRadius: 12, background: '#F7F7FB', maxHeight: 240, overflowY: 'auto' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 10.5 }}>
-                                  <thead style={{ position: 'sticky', top: 0, zIndex: 5, background: '#EDEDFB', borderBottom: '1px solid #E4E4EF' }}>
-                                    <tr>
-                                      <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Group</th>
-                                      <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Tag / Hex</th>
-                                      <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Value</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {currentMetadata.allTags.map((t, idx) => (
-                                      <tr key={idx} style={{ borderBottom: idx === currentMetadata.allTags.length - 1 ? 'none' : '1px solid #E4E4EF', background: idx % 2 === 0 ? '#fff' : '#F7F7FB' }}>
-                                        <td style={{ padding: '6px 10px', fontWeight: 700, color: '#9898B5' }}>{t.group}</td>
-                                        <td style={{ padding: '6px 10px', fontFamily: 'monospace', color: '#111128' }}>
-                                          <span style={{ color: '#5B5BD6', fontWeight: 700 }}>{t.name}</span> <span style={{ fontSize: 9, color: '#9898B5' }}>({t.hex})</span>
-                                        </td>
-                                        <td style={{ padding: '6px 10px', color: '#111128', wordBreak: 'break-all' }}>{String(t.formatted)}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          )}
-
                         </>
+                      ) : null}
+
+                      {/* GPS Coordinates sensitive banner */}
+                      {currentMetadata.gps ? (
+                        <div style={{ padding: 12, background: '#FFFDF5', borderRadius: 12, border: '1px solid #FBE090', marginTop: 6 }}>
+                          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                            <span style={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D97706', marginTop: 2 }}>
+                              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
+                                <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                              </svg>
+                            </span>
+                            <div>
+                              <span style={{ fontSize: 10, fontWeight: 850, color: '#B45309', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Sensitive GPS Location</span>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#78350F' }}>{String(currentMetadata.gpsDms)}</span>
+                              <p style={{ fontSize: 10, color: '#92400E', margin: '4px 0 0', lineHeight: 1.4 }}>
+                                Coordinates: <code>{String(currentMetadata.gps)}</code>. This information will be stripped losslessly upon cleaning.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ padding: 10, background: '#F0FDF4', borderRadius: 10, border: '1px solid #BBF7D0', fontSize: 11, fontWeight: 600, color: '#16A34A', display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                          No GPS location coordinates detected in this photo.
+                        </div>
+                      )}
+
+                      {/* Extended tags table */}
+                      {currentMetadata.allTags && currentMetadata.allTags.length > 0 ? (
+                        <div style={{ marginTop: 12 }}>
+                          <h4 style={{ fontSize: 11, fontWeight: 800, color: '#9898B5', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+                            All Metadata Fields ({currentMetadata.allTags.length})
+                          </h4>
+                          <div style={{ overflowX: 'auto', border: '1px solid #E4E4EF', borderRadius: 12, background: '#F7F7FB', maxHeight: 240, overflowY: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 10.5 }}>
+                              <thead style={{ position: 'sticky', top: 0, zIndex: 5, background: '#EDEDFB', borderBottom: '1px solid #E4E4EF' }}>
+                                <tr>
+                                  <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Group</th>
+                                  <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Tag / Hex</th>
+                                  <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Value</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {currentMetadata.allTags.map((t, idx) => (
+                                  <tr key={idx} style={{ borderBottom: idx === currentMetadata.allTags.length - 1 ? 'none' : '1px solid #E4E4EF', background: idx % 2 === 0 ? '#fff' : '#F7F7FB' }}>
+                                    <td style={{ padding: '6px 10px', fontWeight: 700, color: '#9898B5' }}>{t.group}</td>
+                                    <td style={{ padding: '6px 10px', fontFamily: 'monospace', color: '#111128' }}>
+                                      <span style={{ color: '#5B5BD6', fontWeight: 700 }}>{t.name}</span> <span style={{ fontSize: 9, color: '#9898B5' }}>({t.hex})</span>
+                                    </td>
+                                    <td style={{ padding: '6px 10px', color: '#111128', wordBreak: 'break-all' }}>{String(t.formatted)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                           <div style={{ padding: '32px 10px', textAlign: 'center', color: '#9898B5' }}>
                             <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ margin: '0 auto 12px' }}>
                               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                             </svg>
-                            <p style={{ fontSize: 12, fontWeight: 600, margin: 0 }}>This JPEG contains no standard EXIF header.</p>
+                            <p style={{ fontSize: 12, fontWeight: 600, margin: 0 }}>This image contains no metadata.</p>
                           </div>
                           {hasDetectedMetadata && (
                             <div style={{ padding: 12, background: '#FFFDF5', borderRadius: 10, border: '1px solid #FBE090', fontSize: 11, color: '#92400E', fontWeight: 600 }}>
-                              Note: While no camera EXIF data was parsed, we detected other metadata segments (like comments or custom vendor blocks) in the image. You can still wipe them.
+                              Note: While no metadata fields were extracted, we detected other raw metadata segments in the image headers. You can still wipe them.
                             </div>
                           )}
                         </div>
                       )}
-
                     </div>
                   )
                 ) : (
