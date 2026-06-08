@@ -162,7 +162,7 @@ export default function AddRemovePdfPagesPage() {
           sourceFilesRef.current[fileId] = { name: file.name, buffer, type: 'pdf' };
           addedSize += buffer.byteLength;
 
-          const loadingTask = pdfjs.getDocument({ data: buffer });
+          const loadingTask = pdfjs.getDocument({ data: buffer.slice(0) });
           const pdfDoc = await loadingTask.promise;
           const numPages = pdfDoc.numPages;
 
