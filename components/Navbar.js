@@ -123,6 +123,39 @@ export default function Navbar() {
         {/* ── Right CTA ── */}
         <div className="hidden lg:flex" style={{ alignItems: 'center', gap: 8 }}>
           <a
+            href="/contact"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: '#ffffff',
+              border: '1px solid #D1D1E4',
+              color: '#4E4E6D',
+              fontSize: 12,
+              fontWeight: 700,
+              padding: '6px 14px',
+              borderRadius: 99,
+              textDecoration: 'none',
+              transition: 'all 0.18s ease',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = '#F7F7FB';
+              e.currentTarget.style.borderColor = '#9898B5';
+              e.currentTarget.style.color = '#111128';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = '#ffffff';
+              e.currentTarget.style.borderColor = '#D1D1E4';
+              e.currentTarget.style.color = '#4E4E6D';
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+            Contact Us
+          </a>
+          <a
             href="https://buymeacoffee.com/imagepine"
             target="_blank"
             rel="noopener noreferrer"
@@ -130,23 +163,23 @@ export default function Navbar() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              background: '#FF813F',
+              background: '#7342e6',
               color: '#ffffff',
               fontSize: 12,
               fontWeight: 700,
               padding: '6px 14px',
               borderRadius: 99,
               textDecoration: 'none',
-              boxShadow: '0 2px 8px rgba(255, 129, 63, 0.3)',
+              boxShadow: '0 2px 8px rgba(115, 66, 230, 0.3)',
               transition: 'all 0.18s ease',
             }}
             onMouseEnter={e => {
               e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 129, 63, 0.45)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(115, 66, 230, 0.45)';
             }}
             onMouseLeave={e => {
               e.currentTarget.style.transform = 'none';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 129, 63, 0.3)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(115, 66, 230, 0.3)';
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -243,7 +276,30 @@ export default function Navbar() {
               )}
             </div>
           ))}
-          <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #F1F1F7' }}>
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #F1F1F7', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <a
+              href="/contact"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                background: '#ffffff',
+                border: '1px solid #D1D1E4',
+                color: '#4E4E6D',
+                fontSize: 12,
+                fontWeight: 700,
+                padding: '10px',
+                borderRadius: 10,
+                textDecoration: 'none',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+              Contact Us
+            </a>
             <a
               href="https://buymeacoffee.com/imagepine"
               target="_blank"
@@ -253,14 +309,14 @@ export default function Navbar() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
-                background: '#FF813F',
+                background: '#7342e6',
                 color: '#ffffff',
                 fontSize: 12,
                 fontWeight: 700,
                 padding: '10px',
                 borderRadius: 10,
                 textDecoration: 'none',
-                boxShadow: '0 2px 8px rgba(255, 129, 63, 0.3)',
+                boxShadow: '0 2px 8px rgba(115, 66, 230, 0.3)',
               }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

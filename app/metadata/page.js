@@ -692,7 +692,7 @@ export default function MetadataPage() {
 
   const currentMetadata = selectedFile ? metadataMap[selectedFile.id] : null;
 
-  const hasDetectedMetadata = currentMetadata && (
+  const hasDetectedMetadata = currentMetadata && currentMetadata.detectedSegments && (
     currentMetadata.detectedSegments.exif ||
     currentMetadata.detectedSegments.xmp ||
     currentMetadata.detectedSegments.iptc ||
@@ -799,181 +799,193 @@ export default function MetadataPage() {
                 </div>
 
                 {currentMetadata ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                    
-                    {/* Detected streams checklist */}
-                    <div style={{ background: '#F7F7FB', borderRadius: 12, padding: 14, border: '1px solid #E4E4EF' }}>
-                      <span style={{ fontSize: 10, fontWeight: 850, color: '#9898B5', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
-                        Metadata Streams Detected
-                      </span>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
-                          background: currentMetadata.detectedSegments.exif ? '#FEE2E2' : '#F0FDF4',
-                          borderColor: currentMetadata.detectedSegments.exif ? '#FCA5A5' : '#BBF7D0',
-                          color: currentMetadata.detectedSegments.exif ? '#DC2626' : '#16A34A'
-                        }}>
-                          {currentMetadata.detectedSegments.exif ? '● EXIF Camera/Lens' : '○ No EXIF Segment'}
-                        </span>
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
-                          background: currentMetadata.gps ? '#FEF3C7' : '#F0FDF4',
-                          borderColor: currentMetadata.gps ? '#FCD34D' : '#BBF7D0',
-                          color: currentMetadata.gps ? '#D97706' : '#16A34A'
-                        }}>
-                          {currentMetadata.gps ? '● GPS Coordinates' : '○ No GPS Coordinates'}
-                        </span>
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
-                          background: currentMetadata.detectedSegments.xmp ? '#FEE2E2' : '#F0FDF4',
-                          borderColor: currentMetadata.detectedSegments.xmp ? '#FCA5A5' : '#BBF7D0',
-                          color: currentMetadata.detectedSegments.xmp ? '#DC2626' : '#16A34A'
-                        }}>
-                          {currentMetadata.detectedSegments.xmp ? '● XMP Editor History' : '○ No XMP Segment'}
-                        </span>
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
-                          background: currentMetadata.detectedSegments.iptc ? '#FEE2E2' : '#F0FDF4',
-                          borderColor: currentMetadata.detectedSegments.iptc ? '#FCA5A5' : '#BBF7D0',
-                          color: currentMetadata.detectedSegments.iptc ? '#DC2626' : '#16A34A'
-                        }}>
-                          {currentMetadata.detectedSegments.iptc ? '● IPTC Copyright' : '○ No IPTC Segment'}
-                        </span>
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
-                          background: currentMetadata.detectedSegments.comments ? '#FEE2E2' : '#F0FDF4',
-                          borderColor: currentMetadata.detectedSegments.comments ? '#FCA5A5' : '#BBF7D0',
-                          color: currentMetadata.detectedSegments.comments ? '#DC2626' : '#16A34A'
-                        }}>
-                          {currentMetadata.detectedSegments.comments ? '● COM Comments' : '○ No COM Comments'}
-                        </span>
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
-                          background: '#F0FDF4', borderColor: '#BBF7D0', color: '#16A34A'
-                        }}>
-                          {currentMetadata.detectedSegments.icc ? '✓ ICC Color Profile (Safe)' : '○ No ICC Color Profile'}
-                        </span>
-                      </div>
+                  currentMetadata._error ? (
+                    <div style={{ padding: '24px 16px', background: '#FFF5F5', border: '1px solid #FECACA', borderRadius: 12, color: '#EF4444', textAlign: 'center' }}>
+                      <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2" style={{ margin: '0 auto 10px', display: 'block' }}>
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                      <span style={{ fontSize: 13, fontWeight: 800, display: 'block', marginBottom: 4 }}>Unsupported Image Format</span>
+                      <p style={{ fontSize: 11, color: '#6B6B8A', margin: 0, lineHeight: 1.5 }}>
+                        {currentMetadata._error}. Currently, only standard JPEG/JPG images are supported for reading camera and GPS EXIF metadata.
+                      </p>
                     </div>
-
-                    {/* Summary Exif values */}
-                    {currentMetadata.hasExif ? (
-                      <>
-                        <h4 style={{ fontSize: 11, fontWeight: 800, color: '#9898B5', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>Core EXIF Summary</h4>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
-                          {currentMetadata.make && (
-                            <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
-                              <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Manufacturer</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.make}</span>
-                            </div>
-                          )}
-                          {currentMetadata.model && (
-                            <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
-                              <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Camera Model</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.model}</span>
-                            </div>
-                          )}
-                          {currentMetadata.dateTime && (
-                            <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
-                              <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Date / Time Created</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.dateTime}</span>
-                            </div>
-                          )}
-                          {currentMetadata.software && (
-                            <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
-                              <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Software</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.software}</span>
-                            </div>
-                          )}
-                          {currentMetadata.exposureTime && (
-                            <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
-                              <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Shutter Speed</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.exposureTime}</span>
-                            </div>
-                          )}
-                          {currentMetadata.fNumber && (
-                            <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
-                              <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Aperture</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.fNumber}</span>
-                            </div>
-                          )}
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                      
+                      {/* Detected streams checklist */}
+                      <div style={{ background: '#F7F7FB', borderRadius: 12, padding: 14, border: '1px solid #E4E4EF' }}>
+                        <span style={{ fontSize: 10, fontWeight: 850, color: '#9898B5', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+                          Metadata Streams Detected
+                        </span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
+                            background: currentMetadata.detectedSegments?.exif ? '#FEE2E2' : '#F0FDF4',
+                            borderColor: currentMetadata.detectedSegments?.exif ? '#FCA5A5' : '#BBF7D0',
+                            color: currentMetadata.detectedSegments?.exif ? '#DC2626' : '#16A34A'
+                          }}>
+                            {currentMetadata.detectedSegments?.exif ? '● EXIF Camera/Lens' : '○ No EXIF Segment'}
+                          </span>
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
+                            background: currentMetadata.gps ? '#FEF3C7' : '#F0FDF4',
+                            borderColor: currentMetadata.gps ? '#FCD34D' : '#BBF7D0',
+                            color: currentMetadata.gps ? '#D97706' : '#16A34A'
+                          }}>
+                            {currentMetadata.gps ? '● GPS Coordinates' : '○ No GPS Coordinates'}
+                          </span>
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
+                            background: currentMetadata.detectedSegments?.xmp ? '#FEE2E2' : '#F0FDF4',
+                            borderColor: currentMetadata.detectedSegments?.xmp ? '#FCA5A5' : '#BBF7D0',
+                            color: currentMetadata.detectedSegments?.xmp ? '#DC2626' : '#16A34A'
+                          }}>
+                            {currentMetadata.detectedSegments?.xmp ? '● XMP Editor History' : '○ No XMP Segment'}
+                          </span>
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
+                            background: currentMetadata.detectedSegments?.iptc ? '#FEE2E2' : '#F0FDF4',
+                            borderColor: currentMetadata.detectedSegments?.iptc ? '#FCA5A5' : '#BBF7D0',
+                            color: currentMetadata.detectedSegments?.iptc ? '#DC2626' : '#16A34A'
+                          }}>
+                            {currentMetadata.detectedSegments?.iptc ? '● IPTC Copyright' : '○ No IPTC Segment'}
+                          </span>
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
+                            background: currentMetadata.detectedSegments?.comments ? '#FEE2E2' : '#F0FDF4',
+                            borderColor: currentMetadata.detectedSegments?.comments ? '#FCA5A5' : '#BBF7D0',
+                            color: currentMetadata.detectedSegments?.comments ? '#DC2626' : '#16A34A'
+                          }}>
+                            {currentMetadata.detectedSegments?.comments ? '● COM Comments' : '○ No COM Comments'}
+                          </span>
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, borderRadius: 6, padding: '3px 8px', border: '1px solid',
+                            background: '#F0FDF4', borderColor: '#BBF7D0', color: '#16A34A'
+                          }}>
+                            {currentMetadata.detectedSegments?.icc ? '✓ ICC Color Profile (Safe)' : '○ No ICC Color Profile'}
+                          </span>
                         </div>
+                      </div>
 
-                        {/* GPS Coordinates sensitive banner */}
-                        {currentMetadata.gps ? (
-                          <div style={{ padding: 12, background: '#FFFDF5', borderRadius: 12, border: '1px solid #FBE090', marginTop: 6 }}>
-                            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                              <span style={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D97706', marginTop: 2 }}>
-                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
-                                  <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/>
-                                  <circle cx="12" cy="10" r="3"/>
-                                </svg>
-                              </span>
-                              <div>
-                                <span style={{ fontSize: 10, fontWeight: 850, color: '#B45309', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Sensitive GPS Location</span>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: '#78350F' }}>{currentMetadata.gpsDms}</span>
-                                <p style={{ fontSize: 10, color: '#92400E', margin: '4px 0 0', lineHeight: 1.4 }}>
-                                  Coordinates: <code>{currentMetadata.gps}</code>. This information will be stripped losslessly upon cleaning.
-                                </p>
+                      {/* Summary Exif values */}
+                      {currentMetadata.hasExif ? (
+                        <>
+                          <h4 style={{ fontSize: 11, fontWeight: 800, color: '#9898B5', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>Core EXIF Summary</h4>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+                            {currentMetadata.make && (
+                              <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Manufacturer</span>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.make}</span>
+                              </div>
+                            )}
+                            {currentMetadata.model && (
+                              <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Camera Model</span>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.model}</span>
+                              </div>
+                            )}
+                            {currentMetadata.dateTime && (
+                              <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Date / Time Created</span>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.dateTime}</span>
+                              </div>
+                            )}
+                            {currentMetadata.software && (
+                              <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Software</span>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.software}</span>
+                              </div>
+                            )}
+                            {currentMetadata.exposureTime && (
+                              <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Shutter Speed</span>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.exposureTime}</span>
+                              </div>
+                            )}
+                            {currentMetadata.fNumber && (
+                              <div style={{ padding: 10, background: '#F7F7FB', borderRadius: 10, border: '1px solid #E4E4EF' }}>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: '#9898B5', display: 'block', textTransform: 'uppercase' }}>Aperture</span>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: '#111128' }}>{currentMetadata.fNumber}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* GPS Coordinates sensitive banner */}
+                          {currentMetadata.gps ? (
+                            <div style={{ padding: 12, background: '#FFFDF5', borderRadius: 12, border: '1px solid #FBE090', marginTop: 6 }}>
+                              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                <span style={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D97706', marginTop: 2 }}>
+                                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
+                                    <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                  </svg>
+                                </span>
+                                <div>
+                                  <span style={{ fontSize: 10, fontWeight: 850, color: '#B45309', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Sensitive GPS Location</span>
+                                  <span style={{ fontSize: 12, fontWeight: 700, color: '#78350F' }}>{currentMetadata.gpsDms}</span>
+                                  <p style={{ fontSize: 10, color: '#92400E', margin: '4px 0 0', lineHeight: 1.4 }}>
+                                    Coordinates: <code>{currentMetadata.gps}</code>. This information will be stripped losslessly upon cleaning.
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ) : (
-                          <div style={{ padding: 10, background: '#F0FDF4', borderRadius: 10, border: '1px solid #BBF7D0', fontSize: 11, fontWeight: 600, color: '#16A34A', display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            No GPS location coordinates detected in this photo.
-                          </div>
-                        )}
-
-                        {/* Extended tags table */}
-                        {currentMetadata.allTags && currentMetadata.allTags.length > 0 && (
-                          <div style={{ marginTop: 12 }}>
-                            <h4 style={{ fontSize: 11, fontWeight: 800, color: '#9898B5', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
-                              All Metadata Fields ({currentMetadata.allTags.length})
-                            </h4>
-                            <div style={{ overflowX: 'auto', border: '1px solid #E4E4EF', borderRadius: 12, background: '#F7F7FB', maxHeight: 240, overflowY: 'auto' }}>
-                              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 10.5 }}>
-                                <thead style={{ position: 'sticky', top: 0, zIndex: 5, background: '#EDEDFB', borderBottom: '1px solid #E4E4EF' }}>
-                                  <tr>
-                                    <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Group</th>
-                                    <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Tag / Hex</th>
-                                    <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Value</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {currentMetadata.allTags.map((t, idx) => (
-                                    <tr key={idx} style={{ borderBottom: idx === currentMetadata.allTags.length - 1 ? 'none' : '1px solid #E4E4EF', background: idx % 2 === 0 ? '#fff' : '#F7F7FB' }}>
-                                      <td style={{ padding: '6px 10px', fontWeight: 700, color: '#9898B5' }}>{t.group}</td>
-                                      <td style={{ padding: '6px 10px', fontFamily: 'monospace', color: '#111128' }}>
-                                        <span style={{ color: '#5B5BD6', fontWeight: 700 }}>{t.name}</span> <span style={{ fontSize: 9, color: '#9898B5' }}>({t.hex})</span>
-                                      </td>
-                                      <td style={{ padding: '6px 10px', color: '#111128', wordBreak: 'break-all' }}>{String(t.formatted)}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                          ) : (
+                            <div style={{ padding: 10, background: '#F0FDF4', borderRadius: 10, border: '1px solid #BBF7D0', fontSize: 11, fontWeight: 600, color: '#16A34A', display: 'flex', gap: 8, alignItems: 'center' }}>
+                              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                              No GPS location coordinates detected in this photo.
                             </div>
-                          </div>
-                        )}
+                          )}
 
-                      </>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                        <div style={{ padding: '32px 10px', textAlign: 'center', color: '#9898B5' }}>
-                          <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ margin: '0 auto 12px' }}>
-                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                          </svg>
-                          <p style={{ fontSize: 12, fontWeight: 600, margin: 0 }}>This JPEG contains no standard EXIF header.</p>
+                          {/* Extended tags table */}
+                          {currentMetadata.allTags && currentMetadata.allTags.length > 0 && (
+                            <div style={{ marginTop: 12 }}>
+                              <h4 style={{ fontSize: 11, fontWeight: 800, color: '#9898B5', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+                                All Metadata Fields ({currentMetadata.allTags.length})
+                              </h4>
+                              <div style={{ overflowX: 'auto', border: '1px solid #E4E4EF', borderRadius: 12, background: '#F7F7FB', maxHeight: 240, overflowY: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 10.5 }}>
+                                  <thead style={{ position: 'sticky', top: 0, zIndex: 5, background: '#EDEDFB', borderBottom: '1px solid #E4E4EF' }}>
+                                    <tr>
+                                      <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Group</th>
+                                      <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Tag / Hex</th>
+                                      <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Value</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {currentMetadata.allTags.map((t, idx) => (
+                                      <tr key={idx} style={{ borderBottom: idx === currentMetadata.allTags.length - 1 ? 'none' : '1px solid #E4E4EF', background: idx % 2 === 0 ? '#fff' : '#F7F7FB' }}>
+                                        <td style={{ padding: '6px 10px', fontWeight: 700, color: '#9898B5' }}>{t.group}</td>
+                                        <td style={{ padding: '6px 10px', fontFamily: 'monospace', color: '#111128' }}>
+                                          <span style={{ color: '#5B5BD6', fontWeight: 700 }}>{t.name}</span> <span style={{ fontSize: 9, color: '#9898B5' }}>({t.hex})</span>
+                                        </td>
+                                        <td style={{ padding: '6px 10px', color: '#111128', wordBreak: 'break-all' }}>{String(t.formatted)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                        </>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          <div style={{ padding: '32px 10px', textAlign: 'center', color: '#9898B5' }}>
+                            <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" style={{ margin: '0 auto 12px' }}>
+                              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            <p style={{ fontSize: 12, fontWeight: 600, margin: 0 }}>This JPEG contains no standard EXIF header.</p>
+                          </div>
+                          {hasDetectedMetadata && (
+                            <div style={{ padding: 12, background: '#FFFDF5', borderRadius: 10, border: '1px solid #FBE090', fontSize: 11, color: '#92400E', fontWeight: 600 }}>
+                              Note: While no camera EXIF data was parsed, we detected other metadata segments (like comments or custom vendor blocks) in the image. You can still wipe them.
+                            </div>
+                          )}
                         </div>
-                        {hasDetectedMetadata && (
-                          <div style={{ padding: 12, background: '#FFFDF5', borderRadius: 10, border: '1px solid #FBE090', fontSize: 11, color: '#92400E', fontWeight: 600 }}>
-                            Note: While no camera EXIF data was parsed, we detected other metadata segments (like comments or custom vendor blocks) in the image. You can still wipe them.
-                          </div>
-                        )}
-                      </div>
-                    )}
+                      )}
 
-                  </div>
+                    </div>
+                  )
                 ) : (
                   <div style={{ textAlign: 'center', padding: '40px 0', color: '#9898B5', fontSize: 12 }}>
                     Parsing image stream headers...
