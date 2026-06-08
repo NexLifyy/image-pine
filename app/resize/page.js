@@ -94,7 +94,9 @@ export default function ResizePage() {
       setOriginalWidth(w); setOriginalHeight(h);
       setWidthInput(w.toString()); setHeightInput(h.toString());
       setAspectRatio(w / h);
-      resetResizeStates();
+      setResizedBlob(null);
+      if (resizedUrl) { URL.revokeObjectURL(resizedUrl); setResizedUrl(null); }
+      setErrorMsg('');
     };
     img.src = selectedFile.preview;
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,7 +133,8 @@ export default function ResizePage() {
         let blob;
         if (targetSizeInput && parseFloat(targetSizeInput) > 0) {
           const targetBytes = parseFloat(targetSizeInput) * (targetSizeUnit === 'MB' ? 1024 * 1024 : 1024);
-          blob = await compressCanvasToBlob(canvas, mime, targetBytes);
+          const res = await compressCanvasToBlob(canvas, mime, targetBytes);
+          blob = res.blob;
         } else {
           blob = await new Promise(res => canvas.toBlob(res, mime, 0.92));
         }

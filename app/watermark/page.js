@@ -1,13 +1,128 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ToolPageShell from '@/components/ToolPageShell';
 import UploadBox from '@/components/UploadBox';
 import { saveAs } from 'file-saver';
 import { saveHistory } from '@/lib/storage';
 
-// Reusable component to render the watermark overlay
-function WatermarkLayer({
+// Helper to get coordinates on canvas
+const getCoords = (canvasW, canvasH, itemW, itemH, isImage, s) => {
+  let x = 0, y = 0, align = 'center';
+  const padding = 20 * (canvasW / 1000); // Scale padding relative to image width
+
+  switch (s.position) {
+    case 'top-left':
+      x = padding;
+      y = padding + (isImage ? 0 : itemH / 2);
+      align = 'left';
+      break;
+    case 'top-right':
+      x = canvasW - padding - (isImage ? itemW : 0);
+      y = padding + (isImage ? 0 : itemH / 2);
+      align = isImage ? 'left' : 'right';
+      break;
+    case 'bottom-left':
+      x = padding;
+      y = canvasH - padding - (isImage ? itemH : itemH / 2);
+      align = 'left';
+      break;
+    case 'bottom-right':
+      x = canvasW - padding - (isImage ? itemW : 0);
+      y = canvasH - padding - (isImage ? itemH : itemH / 2);
+      align = isImage ? 'left' : 'right';
+      break;
+    case 'custom':
+      x = (canvasW * s.customX) / 100 - (isImage ? itemW / 2 : 0);
+      y = (canvasH * s.customY) / 100 - (isImage ? itemH / 2 : 0);
+      align = 'center';
+      break;
+    case 'center':
+    default:
+      x = canvasW / 2 - (isImage ? itemW / 2 : 0);
+      y = canvasH / 2 - (isImage ? itemH / 2 : 0);
+      align = 'center';
+      break;
+  }
+
+  return { x, y, align };
+};
+
+// Helper to draw watermark on canvas
+const drawWatermark = (canvas, ctx, img, logoImg, s) => {
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Draw main image
+  ctx.drawImage(img, 0, 0, w, h);
+
+  // Save context state
+  ctx.save();
+
+  if (s.type === 'text') {
+    // Configure Font
+    let fontStr = '';
+    if (s.italic) fontStr += 'italic ';
+    if (s.bold) fontStr += 'bold ';
+    const scaledFontSize = s.fontSize * (w / 1000); // Scale font size relative to image width
+    fontStr += `${scaledFontSize}px ${s.fontFamily}`;
+    ctx.font = fontStr;
+    ctx.fillStyle = s.color;
+    ctx.globalAlpha = s.opacity;
+    ctx.textBaseline = 'middle';
+
+    if (s.tile) {
+      // Tiled Grid Watermark
+      ctx.textAlign = 'center';
+      const rad = (s.rotation * Math.PI) / 180;
+      const textWidth = ctx.measureText(s.text).width || 150;
+      const xGap = textWidth + 100 * (w / 1000); // Scale gaps relative to image width
+      const yGap = scaledFontSize + 120 * (w / 1000);
+
+      for (let x = -w; x < w * 2; x += xGap) {
+        for (let y = -h; y < h * 2; y += yGap) {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(rad);
+          ctx.fillText(s.text, 0, 0);
+          ctx.restore();
+        }
+      }
+    } else {
+      // Single Watermark
+      const textWidth = ctx.measureText(s.text).width;
+      let { x, y, align } = getCoords(w, h, textWidth, scaledFontSize, false, s);
+      ctx.textAlign = align;
+
+      ctx.translate(x, y);
+      if (s.rotation !== 0) {
+        ctx.rotate((s.rotation * Math.PI) / 180);
+      }
+      ctx.fillText(s.text, 0, 0);
+    }
+  } else if (s.type === 'image' && logoImg) {
+    // Image Watermark
+    const logoW = w * (s.logoScale / 100);
+    const logoH = logoImg.height * (logoW / logoImg.width);
+    ctx.globalAlpha = s.logoOpacity;
+
+    let { x, y } = getCoords(w, h, logoW, logoH, true, s);
+
+    // Rotate logo around its center
+    ctx.translate(x + logoW / 2, y + logoH / 2);
+    if (s.logoRotation !== 0) {
+      ctx.rotate((s.logoRotation * Math.PI) / 180);
+    }
+    ctx.drawImage(logoImg, -logoW / 2, -logoH / 2, logoW, logoH);
+  }
+
+  ctx.restore();
+};
+
+// Reusable component to render the watermark overlay on canvas
+function WatermarkedCanvas({
+  fileObj,
+  logoImg,
   type,
   text,
   fontFamily,
@@ -18,93 +133,53 @@ function WatermarkLayer({
   bold,
   italic,
   tile,
-  logoPreview,
   logoScale,
   logoOpacity,
   logoRotation,
   position,
   customX,
   customY,
-  isThumbnail = false
+  style
 }) {
-  const scaledFontSize = isThumbnail ? Math.max(10, fontSize * 0.35) : fontSize * 0.75;
-  const scaledLogoScale = isThumbnail ? Math.max(12, logoScale * 0.8) : logoScale;
+  const canvasRef = useRef(null);
+  const [mainImg, setMainImg] = useState(null);
 
-  return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 2 }}>
-      {type === 'text' ? (
-        tile ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isThumbnail ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)',
-            gap: isThumbnail ? 12 : 32,
-            padding: isThumbnail ? 8 : 20,
-            transform: `rotate(${rotation}deg)`,
-            transformOrigin: 'center',
-            opacity: opacity,
-            color: color,
-            fontFamily: fontFamily,
-            fontSize: `${isThumbnail ? scaledFontSize * 0.8 : fontSize * 0.5}px`,
-            fontWeight: bold ? 'bold' : 'normal',
-            fontStyle: italic ? 'italic' : 'normal',
-            textAlign: 'center',
-            width: '150%',
-            height: '150%',
-            margin: '-25%'
-          }}>
-            {Array.from({ length: isThumbnail ? 9 : 25 }).map((_, i) => (
-              <span key={i} style={{ whiteSpace: 'nowrap' }}>{text}</span>
-            ))}
-          </div>
-        ) : (
-          <div style={{
-            position: 'absolute',
-            opacity: opacity,
-            color: color,
-            fontFamily: fontFamily,
-            fontSize: `${scaledFontSize}px`,
-            fontWeight: bold ? 'bold' : 'normal',
-            fontStyle: italic ? 'italic' : 'normal',
-            transform: `rotate(${rotation}deg)`,
-            transformOrigin: 'center',
-            whiteSpace: 'nowrap',
-            ...(() => {
-              if (position === 'top-left') return { top: isThumbnail ? 8 : 16, left: isThumbnail ? 8 : 16 };
-              if (position === 'top-right') return { top: isThumbnail ? 8 : 16, right: isThumbnail ? 8 : 16 };
-              if (position === 'bottom-left') return { bottom: isThumbnail ? 8 : 16, left: isThumbnail ? 8 : 16 };
-              if (position === 'bottom-right') return { bottom: isThumbnail ? 8 : 16, right: isThumbnail ? 8 : 16 };
-              if (position === 'custom') return { top: `${customY}%`, left: `${customX}%`, transform: `translate(-50%, -50%) rotate(${rotation}deg)` };
-              return { top: '50%', left: '50%', transform: `translate(-50%, -50%) rotate(${rotation}deg)` };
-            })()
-          }}>
-            {text}
-          </div>
-        )
-      ) : (
-        logoPreview && (
-          <img
-            src={logoPreview}
-            alt=""
-            style={{
-              position: 'absolute',
-              width: `${scaledLogoScale}%`,
-              opacity: logoOpacity,
-              transform: `rotate(${logoRotation}deg) translate(-50%, -50%)`,
-              transformOrigin: 'top left',
-              ...(() => {
-                if (position === 'top-left') return { top: `${scaledLogoScale * 0.5}%`, left: `${scaledLogoScale * 0.5}%` };
-                if (position === 'top-right') return { top: `${scaledLogoScale * 0.5}%`, right: 0 };
-                if (position === 'bottom-left') return { bottom: 0, left: `${scaledLogoScale * 0.5}%` };
-                if (position === 'bottom-right') return { bottom: 0, right: 0 };
-                if (position === 'custom') return { top: `${customY}%`, left: `${customX}%` };
-                return { top: '50%', left: '50%' };
-              })()
-            }}
-          />
-        )
-      )}
-    </div>
-  );
+  useEffect(() => {
+    if (!fileObj?.preview) {
+      setMainImg(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      setMainImg(img);
+    };
+    img.onerror = () => {
+      setMainImg(null);
+    };
+    img.src = fileObj.preview;
+  }, [fileObj]);
+
+  useEffect(() => {
+    if (!canvasRef.current || !mainImg) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = mainImg.naturalWidth || mainImg.width;
+    canvas.height = mainImg.naturalHeight || mainImg.height;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const settings = {
+      type, text, fontFamily, fontSize, color, opacity, rotation, bold, italic, tile,
+      logoScale, logoOpacity, logoRotation, position, customX, customY
+    };
+
+    drawWatermark(canvas, ctx, mainImg, logoImg, settings);
+  }, [mainImg, logoImg, type, text, fontFamily, fontSize, color, opacity, rotation, bold, italic, tile, logoScale, logoOpacity, logoRotation, position, customX, customY]);
+
+  return <canvas ref={canvasRef} style={style} />;
 }
 
 export default function WatermarkPage() {
@@ -132,6 +207,18 @@ export default function WatermarkPage() {
   const [logoScale, setLogoScale] = useState(15); // % of main image width
   const [logoOpacity, setLogoOpacity] = useState(0.5);
   const [logoRotation, setLogoRotation] = useState(0);
+  const [logoImg, setLogoImg] = useState(null);
+
+  useEffect(() => {
+    if (logoPreview) {
+      const img = new Image();
+      img.onload = () => setLogoImg(img);
+      img.onerror = () => setLogoImg(null);
+      img.src = logoPreview;
+    } else {
+      setLogoImg(null);
+    }
+  }, [logoPreview]);
   
   // Position settings
   const [position, setPosition] = useState('center'); // 'top-left' | 'top-right' | 'center' | 'bottom-left' | 'bottom-right' | 'custom'
@@ -242,117 +329,6 @@ export default function WatermarkPage() {
     return (b / 1024).toFixed(1) + ' KB';
   };
 
-  // Helper to draw watermark on canvas
-  const drawWatermark = (canvas, ctx, img, logoImg) => {
-    const w = canvas.width;
-    const h = canvas.height;
-
-    // Draw main image
-    ctx.drawImage(img, 0, 0, w, h);
-
-    // Save context state
-    ctx.save();
-
-    if (type === 'text') {
-      // Configure Font
-      let fontStr = '';
-      if (italic) fontStr += 'italic ';
-      if (bold) fontStr += 'bold ';
-      fontStr += `${fontSize}px ${fontFamily}`;
-      ctx.font = fontStr;
-      ctx.fillStyle = color;
-      ctx.globalAlpha = opacity;
-      ctx.textBaseline = 'middle';
-
-      if (tile) {
-        // Tiled Grid Watermark
-        ctx.textAlign = 'center';
-        const rad = (rotation * Math.PI) / 180;
-        const textWidth = ctx.measureText(text).width || 150;
-        const xGap = textWidth + 100;
-        const yGap = fontSize + 120;
-
-        for (let x = -w; x < w * 2; x += xGap) {
-          for (let y = -h; y < h * 2; y += yGap) {
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.rotate(rad);
-            ctx.fillText(text, 0, 0);
-            ctx.restore();
-          }
-        }
-      } else {
-        // Single Watermark
-        const textWidth = ctx.measureText(text).width;
-        let { x, y, align } = getCoords(w, h, textWidth, fontSize);
-        ctx.textAlign = align;
-
-        ctx.translate(x, y);
-        if (rotation !== 0) {
-          ctx.rotate((rotation * Math.PI) / 180);
-        }
-        ctx.fillText(text, 0, 0);
-      }
-    } else if (type === 'image' && logoImg) {
-      // Image Watermark
-      const logoW = w * (logoScale / 100);
-      const logoH = logoImg.height * (logoW / logoImg.width);
-      ctx.globalAlpha = logoOpacity;
-
-      let { x, y } = getCoords(w, h, logoW, logoH, true);
-
-      // Rotate logo around its center
-      ctx.translate(x + logoW / 2, y + logoH / 2);
-      if (logoRotation !== 0) {
-        ctx.rotate((logoRotation * Math.PI) / 180);
-      }
-      ctx.drawImage(logoImg, -logoW / 2, -logoH / 2, logoW, logoH);
-    }
-
-    ctx.restore();
-  };
-
-  const getCoords = (canvasW, canvasH, itemW, itemH, isImage = false) => {
-    let x = 0, y = 0, align = 'center';
-    const padding = 20;
-
-    switch (position) {
-      case 'top-left':
-        x = padding;
-        y = padding + (isImage ? 0 : itemH / 2);
-        align = 'left';
-        break;
-      case 'top-right':
-        x = canvasW - padding - (isImage ? itemW : 0);
-        y = padding + (isImage ? 0 : itemH / 2);
-        align = isImage ? 'left' : 'right';
-        break;
-      case 'bottom-left':
-        x = padding;
-        y = canvasH - padding - (isImage ? itemH : itemH / 2);
-        align = 'left';
-        break;
-      case 'bottom-right':
-        x = canvasW - padding - (isImage ? itemW : 0);
-        y = canvasH - padding - (isImage ? itemH : itemH / 2);
-        align = isImage ? 'left' : 'right';
-        break;
-      case 'custom':
-        x = (canvasW * customX) / 100 - (isImage ? itemW / 2 : 0);
-        y = (canvasH * customY) / 100 - (isImage ? itemH / 2 : 0);
-        align = 'center';
-        break;
-      case 'center':
-      default:
-        x = canvasW / 2 - (isImage ? itemW / 2 : 0);
-        y = canvasH / 2 - (isImage ? itemH / 2 : 0);
-        align = 'center';
-        break;
-    }
-
-    return { x, y, align };
-  };
-
   // Process a single file to a blob
   const processImage = (fileObj, logoImg) => {
     return new Promise((resolve, reject) => {
@@ -365,7 +341,11 @@ export default function WatermarkPage() {
           const ctx = canvas.getContext('2d');
           if (!ctx) throw new Error('Canvas context failed');
 
-          drawWatermark(canvas, ctx, img, logoImg);
+          const settings = {
+            type, text, fontFamily, fontSize, color, opacity, rotation, bold, italic, tile,
+            logoScale, logoOpacity, logoRotation, position, customX, customY
+          };
+          drawWatermark(canvas, ctx, img, logoImg, settings);
 
           const mimeMap = {
             'Original': fileObj.type,
@@ -583,15 +563,26 @@ export default function WatermarkPage() {
               }}>
                 {selectedFile && (
                   <div style={{ position: 'relative', maxWidth: '100%', maxHeight: 440, display: 'inline-block', overflow: 'hidden', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-                    {/* Base Image */}
-                    <img src={selectedFile.preview} alt="" style={{ maxWidth: '100%', maxHeight: 440, display: 'block', userSelect: 'none' }} />
-
-                    {/* Watermark Preview Layer */}
-                    <WatermarkLayer
-                      type={type} text={text} fontFamily={fontFamily} fontSize={fontSize} color={color}
-                      opacity={opacity} rotation={rotation} bold={bold} italic={italic} tile={tile}
-                      logoPreview={logoPreview} logoScale={logoScale} logoOpacity={logoOpacity} logoRotation={logoRotation}
-                      position={position} customX={customX} customY={customY} isThumbnail={false}
+                    <WatermarkedCanvas
+                      fileObj={selectedFile}
+                      logoImg={logoImg}
+                      type={type}
+                      text={text}
+                      fontFamily={fontFamily}
+                      fontSize={fontSize}
+                      color={color}
+                      opacity={opacity}
+                      rotation={rotation}
+                      bold={bold}
+                      italic={italic}
+                      tile={tile}
+                      logoScale={logoScale}
+                      logoOpacity={logoOpacity}
+                      logoRotation={logoRotation}
+                      position={position}
+                      customX={customX}
+                      customY={customY}
+                      style={{ maxWidth: '100%', maxHeight: 440, display: 'block', objectFit: 'contain' }}
                     />
                   </div>
                 )}
@@ -614,12 +605,26 @@ export default function WatermarkPage() {
                       }}
                     >
                       <div style={{ position: 'relative', width: '100%', height: 100, overflow: 'hidden', borderRadius: 8, background: '#F7F7FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img src={fileObj.preview} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                        <WatermarkLayer
-                          type={type} text={text} fontFamily={fontFamily} fontSize={fontSize} color={color}
-                          opacity={opacity} rotation={rotation} bold={bold} italic={italic} tile={tile}
-                          logoPreview={logoPreview} logoScale={logoScale} logoOpacity={logoOpacity} logoRotation={logoRotation}
-                          position={position} customX={customX} customY={customY} isThumbnail={true}
+                        <WatermarkedCanvas
+                          fileObj={fileObj}
+                          logoImg={logoImg}
+                          type={type}
+                          text={text}
+                          fontFamily={fontFamily}
+                          fontSize={fontSize}
+                          color={color}
+                          opacity={opacity}
+                          rotation={rotation}
+                          bold={bold}
+                          italic={italic}
+                          tile={tile}
+                          logoScale={logoScale}
+                          logoOpacity={logoOpacity}
+                          logoRotation={logoRotation}
+                          position={position}
+                          customX={customX}
+                          customY={customY}
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
                         />
                       </div>
                       <div style={{ minWidth: 0, flexGrow: 1 }}>
