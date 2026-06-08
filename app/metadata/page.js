@@ -353,7 +353,7 @@ export default function MetadataPage() {
               name: 'Image Width',
               desc: 'Width in pixels',
               raw: img.naturalWidth,
-              formatted: `${img.naturalWidth} px`
+              formatted: img.naturalWidth
             });
             
             tags.allTags.push({
@@ -363,7 +363,7 @@ export default function MetadataPage() {
               name: 'Image Height',
               desc: 'Height in pixels',
               raw: img.naturalHeight,
-              formatted: `${img.naturalHeight} px`
+              formatted: img.naturalHeight
             });
             
             tags.allTags.push({
@@ -2090,18 +2090,14 @@ export default function MetadataPage() {
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 10.5 }}>
                               <thead style={{ position: 'sticky', top: 0, zIndex: 5, background: '#EDEDFB', borderBottom: '1px solid #E4E4EF' }}>
                                 <tr>
-                                  <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Group</th>
-                                  <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Tag / Hex</th>
+                                  <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Tag</th>
                                   <th style={{ padding: '6px 10px', fontWeight: 800, color: '#5B5BD6' }}>Value</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {currentMetadata.allTags.map((t, idx) => (
                                   <tr key={idx} style={{ borderBottom: idx === currentMetadata.allTags.length - 1 ? 'none' : '1px solid #E4E4EF', background: idx % 2 === 0 ? '#fff' : '#F7F7FB' }}>
-                                    <td style={{ padding: '6px 10px', fontWeight: 700, color: '#9898B5' }}>{t.group}</td>
-                                    <td style={{ padding: '6px 10px', fontFamily: 'monospace', color: '#111128' }}>
-                                      <span style={{ color: '#5B5BD6', fontWeight: 700 }}>{t.name}</span> <span style={{ fontSize: 9, color: '#9898B5' }}>({t.hex})</span>
-                                    </td>
+                                    <td style={{ padding: '6px 10px', fontWeight: 700, color: '#111128' }}>{t.name}</td>
                                     <td style={{ padding: '6px 10px', color: '#111128', wordBreak: 'break-all' }}>{String(t.formatted)}</td>
                                   </tr>
                                 ))}
