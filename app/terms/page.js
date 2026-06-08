@@ -79,7 +79,7 @@ export default function TermsPage() {
           <div>
             <h2 style={h2Style}>1. Terms Acceptance</h2>
             <p style={{ ...pStyle, marginTop: 12 }}>
-              By accessing and using Image Pine ("we", "our", "us"), you agree to comply with and be bound by these Terms of Service. If you do not agree with any part of these terms, please do not use our services.
+              By accessing and using ImagePine ("we", "our", "us"), you agree to comply with and be bound by these Terms of Service. If you do not agree with any part of these terms, please do not use our services.
             </p>
           </div>
 
@@ -89,7 +89,7 @@ export default function TermsPage() {
               We grant you a free, non-exclusive, non-transferable, revocable license to access and use our web application for processing files.
             </p>
             <p style={{ ...pStyle, marginTop: 10 }}>
-              You are permitted to use our resizing, compression, cropping, rotation, and document compilation tools for both <strong>personal and commercial purposes</strong>. There are no subscriptions, processing charges, or licenses needed to sell or use output files processed by Image Pine.
+              You are permitted to use our resizing, compression, cropping, rotation, and document compilation tools for both <strong>personal and commercial purposes</strong>. There are no subscriptions, processing charges, or licenses needed to sell or use output files processed by ImagePine.
             </p>
           </div>
 
@@ -106,7 +106,7 @@ export default function TermsPage() {
           <div>
             <h2 style={h2Style}>4. Prohibited Uses</h2>
             <p style={{ ...pStyle, marginTop: 12 }}>
-              You agree not to use Image Pine to:
+              You agree not to use ImagePine to:
             </p>
             <ul style={{ paddingLeft: 20, margin: '10px 0 0', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: '#6B6B8A', lineHeight: 1.6 }}>
               <li>Attempt to scrape, reverse engineer, copy or clone our application code.</li>
@@ -118,7 +118,7 @@ export default function TermsPage() {
           <div>
             <h2 style={h2Style}>5. Disclaimer of Warranties</h2>
             <p style={{ ...pStyle, marginTop: 12 }}>
-              Image Pine is provided "as is" and "as available" without warranties of any kind, either express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
+              ImagePine is provided "as is" and "as available" without warranties of any kind, either express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
             </p>
             <p style={{ ...pStyle, marginTop: 10 }}>
               We do not warrant that our tool outputs will be completely free of visual artifacts, that the compression ratio will meet specific standards, or that the application will operate continuously without interruption.
@@ -128,7 +128,7 @@ export default function TermsPage() {
           <div>
             <h2 style={h2Style}>6. Limitation of Liability</h2>
             <p style={{ ...pStyle, marginTop: 12 }}>
-              In no event shall Image Pine or its developers be liable for any direct, indirect, incidental, special, consequential, or exemplary damages, including but not limited to damages for loss of profits, goodwill, data, or other intangible losses arising from the use of or inability to use this service.
+              In no event shall ImagePine or its developers be liable for any direct, indirect, incidental, special, consequential, or exemplary damages, including but not limited to damages for loss of profits, goodwill, data, or other intangible losses arising from the use of or inability to use this service.
             </p>
           </div>
 

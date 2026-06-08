@@ -286,34 +286,24 @@ export default function ObjectEraserPage() {
         const width = canvas.width;
         const height = canvas.height;
 
-        // CRITICAL BUG RESOLUTION:
-        // Draw the pure original image onto the canvas FIRST to fetch clean boundaries,
-        // avoiding any blended red/pink overlay mask colors.
+        // Draw original clean image onto canvas first to get clean boundary pixels
         ctx.clearRect(0, 0, width, height);
         ctx.drawImage(originalImageRef.current, 0, 0);
 
         const imgData = ctx.getImageData(0, 0, width, height);
         const data = imgData.data;
 
-        // Apply a slight blur to the mask to soften borders (feathering)
-        const tempMaskCanvas = document.createElement('canvas');
-        tempMaskCanvas.width = width;
-        tempMaskCanvas.height = height;
-        const tempMaskCtx = tempMaskCanvas.getContext('2d');
-        if (tempMaskCtx) {
-          tempMaskCtx.filter = 'blur(4px)';
-          tempMaskCtx.drawImage(maskCanvas, 0, 0);
-        }
+        // Extract mask pixels (unblurred mask for patch-based synthesis)
+        const maskData = maskCtx.getImageData(0, 0, width, height).data;
 
-        const maskData = (tempMaskCtx || maskCtx).getImageData(0, 0, width, height).data;
-
-        // Calculate mask bounding box to restrict solver region for 100x speed
+        // Find mask bounding box
         let minX = width, maxX = 0, minY = height, maxY = 0;
         let hasMaskPixels = false;
         for (let y = 0; y < height; y++) {
+          const rowOffset = y * width;
           for (let x = 0; x < width; x++) {
-            const idx = (y * width + x) * 4;
-            if (maskData[idx + 3] > 8) {
+            const idx = (rowOffset + x) * 4;
+            if (maskData[idx + 3] > 10) {
               if (x < minX) minX = x;
               if (x > maxX) maxX = x;
               if (y < minY) minY = y;
@@ -329,56 +319,285 @@ export default function ObjectEraserPage() {
           return;
         }
 
-        // Add padding to bounding box to gather enough neighborhood pixels
-        const p = 30;
-        minX = Math.max(1, minX - p);
-        maxX = Math.min(width - 2, maxX + p);
-        minY = Math.max(1, minY - p);
-        maxY = Math.min(height - 2, maxY + p);
+        // Add padding around mask bounding box
+        const pad = 35;
+        minX = Math.max(0, minX - pad);
+        maxX = Math.min(width - 1, maxX + pad);
+        minY = Math.max(0, minY - pad);
+        maxY = Math.min(height - 1, maxY + pad);
 
-        // Run Laplacian Heat Diffusion on sub-region
-        const iterations = 250;
-        const buffer1 = new Uint8ClampedArray(data);
-        const buffer2 = new Uint8ClampedArray(data);
+        const cropW = maxX - minX + 1;
+        const cropH = maxY - minY + 1;
 
-        for (let iter = 0; iter < iterations; iter++) {
-          const src = iter % 2 === 0 ? buffer1 : buffer2;
-          const dst = iter % 2 === 0 ? buffer2 : buffer1;
+        // Copy cropped image and mask data
+        const cropImgData = ctx.getImageData(minX, minY, cropW, cropH);
+        const cropPixels = cropImgData.data; // Uint8ClampedArray of size cropW * cropH * 4
 
-          for (let y = minY; y <= maxY; y++) {
-            for (let x = minX; x <= maxX; x++) {
-              const idx = (y * width + x) * 4;
+        const cropMaskData = maskCtx.getImageData(minX, minY, cropW, cropH).data;
 
-              // If this pixel is part of the mask (alpha > 0), solve Laplace equation
-              if (maskData[idx + 3] > 10) {
-                const top = ((y - 1) * width + x) * 4;
-                const bottom = ((y + 1) * width + x) * 4;
-                const left = (y * width + (x - 1)) * 4;
-                const right = (y * width + (x + 1)) * 4;
+        // Set up known array (1 = known/unmasked, 0 = masked)
+        const known = new Uint8Array(cropW * cropH);
+        let maskedCount = 0;
+        for (let i = 0; i < cropW * cropH; i++) {
+          if (cropMaskData[i * 4 + 3] > 15) {
+            known[i] = 0; // masked
+            maskedCount++;
+          } else {
+            known[i] = 1; // known
+          }
+        }
 
-                dst[idx]     = (src[top] + src[bottom] + src[left] + src[right]) >> 2;
-                dst[idx + 1] = (src[top + 1] + src[bottom + 1] + src[left + 1] + src[right + 1]) >> 2;
-                dst[idx + 2] = (src[top + 2] + src[bottom + 2] + src[left + 2] + src[right + 2]) >> 2;
-              } else {
-                dst[idx]     = src[idx];
-                dst[idx + 1] = src[idx + 1];
-                dst[idx + 2] = src[idx + 2];
+        // Patch-based Exemplar Inpainting parameters
+        const r = 3; // Patch radius (7x7 patch)
+        const searchRadius = 32;
+
+        let maxIterations = Math.min(800, Math.ceil(maskedCount / 2));
+        let iter = 0;
+
+        // We will keep track of border pixels
+        const borderPixels = new Int32Array(cropW * cropH);
+
+        while (maskedCount > 0 && iter < maxIterations) {
+          iter++;
+          
+          let borderCount = 0;
+          // Find border pixels (masked pixels with at least one known 4-neighbor)
+          for (let y = r; y < cropH - r; y++) {
+            const rowIdx = y * cropW;
+            for (let x = r; x < cropW - r; x++) {
+              const idx = rowIdx + x;
+              if (known[idx] === 0) {
+                const isBorder = 
+                  known[idx - 1] === 1 || known[idx + 1] === 1 || 
+                  known[idx - cropW] === 1 || known[idx + cropW] === 1;
+                if (isBorder) {
+                  borderPixels[borderCount++] = idx;
+                }
               }
+            }
+          }
+
+          if (borderCount === 0) {
+            break;
+          }
+
+          // Prioritize border pixels based on confidence (known ratio in the patch)
+          let bestIdx = -1;
+          let maxKnownRatio = -1;
+
+          for (let b = 0; b < borderCount; b++) {
+            const idx = borderPixels[b];
+            const px = idx % cropW;
+            const py = Math.floor(idx / cropW);
+
+            let knownCount = 0;
+            for (let dy = -r; dy <= r; dy++) {
+              const pRowIdx = (py + dy) * cropW;
+              for (let dx = -r; dx <= r; dx++) {
+                if (known[pRowIdx + (px + dx)] === 1) {
+                  knownCount++;
+                }
+              }
+            }
+
+            if (knownCount > maxKnownRatio) {
+              maxKnownRatio = knownCount;
+              bestIdx = idx;
+            }
+          }
+
+          if (bestIdx === -1) break;
+
+          const tx = bestIdx % cropW;
+          const ty = Math.floor(bestIdx / cropW);
+
+          // Find best matching patch in neighborhood
+          let bestSsd = Infinity;
+          let bestX = -1;
+          let bestY = -1;
+
+          const startX = Math.max(r, tx - searchRadius);
+          const endX = Math.min(cropW - 1 - r, tx + searchRadius);
+          const startY = Math.max(r, ty - searchRadius);
+          const endY = Math.min(cropH - 1 - r, ty + searchRadius);
+
+          for (let sy = startY; sy <= endY; sy++) {
+            for (let sx = startX; sx <= endX; sx++) {
+              // Source patch must be completely known
+              let fullyKnown = true;
+              for (let dy = -r; dy <= r; dy++) {
+                const qRowIdx = (sy + dy) * cropW;
+                for (let dx = -r; dx <= r; dx++) {
+                  if (known[qRowIdx + (sx + dx)] === 0) {
+                    fullyKnown = false;
+                    break;
+                  }
+                }
+                if (!fullyKnown) break;
+              }
+
+              if (!fullyKnown) continue;
+
+              // Calculate SSD between target and source patch
+              let ssd = 0;
+              let possible = true;
+
+              for (let dy = -r; dy <= r; dy++) {
+                const tRowIdx = (ty + dy) * cropW;
+                const sRowIdx = (sy + dy) * cropW;
+                for (let dx = -r; dx <= r; dx++) {
+                  const tIdx = tRowIdx + (tx + dx);
+                  if (known[tIdx] === 1) {
+                    const sIdx = sRowIdx + (sx + dx);
+                    
+                    const tDataIdx = tIdx * 4;
+                    const sDataIdx = sIdx * 4;
+
+                    const dr = cropPixels[tDataIdx] - cropPixels[sDataIdx];
+                    const dg = cropPixels[tDataIdx + 1] - cropPixels[sDataIdx + 1];
+                    const db = cropPixels[tDataIdx + 2] - cropPixels[sDataIdx + 2];
+
+                    ssd += dr * dr + dg * dg + db * db;
+                    if (ssd >= bestSsd) {
+                      possible = false;
+                      break;
+                    }
+                  }
+                }
+                if (!possible) break;
+              }
+
+              if (possible && ssd < bestSsd) {
+                bestSsd = ssd;
+                bestX = sx;
+                bestY = sy;
+              }
+            }
+          }
+
+          // Fallback: If no fully known patch was found in local window, search the entire crop
+          if (bestX === -1) {
+            let minDistance = Infinity;
+            for (let sy = r; sy < cropH - r; sy++) {
+              for (let sx = r; sx < cropW - r; sx++) {
+                let fullyKnown = true;
+                for (let dy = -r; dy <= r; dy++) {
+                  const qRowIdx = (sy + dy) * cropW;
+                  for (let dx = -r; dx <= r; dx++) {
+                    if (known[qRowIdx + (sx + dx)] === 0) {
+                      fullyKnown = false;
+                      break;
+                    }
+                  }
+                  if (!fullyKnown) break;
+                }
+
+                if (!fullyKnown) continue;
+
+                const dist = (sx - tx) * (sx - tx) + (sy - ty) * (sy - ty);
+                if (dist < minDistance) {
+                  minDistance = dist;
+                  bestX = sx;
+                  bestY = sy;
+                }
+              }
+            }
+          }
+
+          // Copy texture from source patch to target patch for unknown pixels
+          if (bestX !== -1) {
+            for (let dy = -r; dy <= r; dy++) {
+              const tRowIdx = (ty + dy) * cropW;
+              const sRowIdx = (bestY + dy) * cropW;
+              for (let dx = -r; dx <= r; dx++) {
+                const tIdx = tRowIdx + (tx + dx);
+                if (known[tIdx] === 0) {
+                  const sIdx = sRowIdx + (bestX + dx);
+                  const tDataIdx = tIdx * 4;
+                  const sDataIdx = sIdx * 4;
+
+                  cropPixels[tDataIdx]     = cropPixels[sDataIdx];
+                  cropPixels[tDataIdx + 1] = cropPixels[sDataIdx + 1];
+                  cropPixels[tDataIdx + 2] = cropPixels[sDataIdx + 2];
+                  cropPixels[tDataIdx + 3] = cropPixels[sDataIdx + 3];
+
+                  known[tIdx] = 1;
+                }
+              }
+            }
+          } else {
+            // Absolute fallback: mark target pixel as known to prevent infinite loop
+            known[bestIdx] = 1;
+          }
+
+          // Recalculate remaining masked pixels count
+          maskedCount = 0;
+          for (let i = 0; i < cropW * cropH; i++) {
+            if (known[i] === 0) maskedCount++;
+          }
+        }
+
+        // Fill any remaining isolated masked pixels with neighbor interpolation
+        for (let i = 0; i < cropW * cropH; i++) {
+          if (known[i] === 0) {
+            const cx = i % cropW;
+            const cy = Math.floor(i / cropW);
+            let found = false;
+            for (let radius = 1; radius < Math.max(cropW, cropH); radius++) {
+              for (let dy = -radius; dy <= radius; dy++) {
+                const ny = cy + dy;
+                if (ny >= 0 && ny < cropH) {
+                  const nRowIdx = ny * cropW;
+                  for (let dx = -radius; dx <= radius; dx++) {
+                    const nx = cx + dx;
+                    if (nx >= 0 && nx < cropW) {
+                      const nidx = nRowIdx + nx;
+                      if (known[nidx] === 1) {
+                        cropPixels[i * 4] = cropPixels[nidx * 4];
+                        cropPixels[i * 4 + 1] = cropPixels[nidx * 4 + 1];
+                        cropPixels[i * 4 + 2] = cropPixels[nidx * 4 + 2];
+                        known[i] = 1;
+                        found = true;
+                        break;
+                      }
+                    }
+                  }
+                  if (found) break;
+                }
+              }
+              if (found) break;
             }
           }
         }
 
-        const finalBuffer = iterations % 2 === 0 ? buffer1 : buffer2;
-        // Blend the diffused image back with the clean original image using the feathered mask alpha values
-        for (let i = 0; i < data.length; i += 4) {
-          const alpha = maskData[i + 3] / 255;
-          data[i]     = Math.round(data[i] * (1 - alpha) + finalBuffer[i] * alpha);
-          data[i + 1] = Math.round(data[i + 1] * (1 - alpha) + finalBuffer[i + 1] * alpha);
-          data[i + 2] = Math.round(data[i + 2] * (1 - alpha) + finalBuffer[i + 2] * alpha);
+        // Feather and blend the inpainted crop back into the original image
+        const tempMaskCanvas = document.createElement('canvas');
+        tempMaskCanvas.width = cropW;
+        tempMaskCanvas.height = cropH;
+        const tempMaskCtx = tempMaskCanvas.getContext('2d');
+        if (tempMaskCtx) {
+          tempMaskCtx.filter = 'blur(4px)';
+          tempMaskCtx.drawImage(maskCanvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
         }
 
-        ctx.putImageData(imgData, 0, 0);
+        const cropFeatheredMask = (tempMaskCtx || maskCtx).getImageData(0, 0, cropW, cropH).data;
 
+        // Blend: originalColor * (1 - alpha) + inpaintedColor * alpha
+        const originalCropImgData = ctx.getImageData(minX, minY, cropW, cropH);
+        const originalCropPixels = originalCropImgData.data;
+
+        for (let i = 0; i < cropW * cropH; i++) {
+          const idx = i * 4;
+          const alpha = cropFeatheredMask[idx + 3] / 255;
+          cropPixels[idx]     = Math.round(originalCropPixels[idx] * (1 - alpha) + cropPixels[idx] * alpha);
+          cropPixels[idx + 1] = Math.round(originalCropPixels[idx + 1] * (1 - alpha) + cropPixels[idx + 1] * alpha);
+          cropPixels[idx + 2] = Math.round(originalCropPixels[idx + 2] * (1 - alpha) + cropPixels[idx + 2] * alpha);
+        }
+
+        // Write the blended crop back onto the main canvas
+        ctx.putImageData(cropImgData, minX, minY);
+
+        // Update the original image reference so future operations build on this result
         const updatedImg = new Image();
         updatedImg.onload = () => {
           originalImageRef.current = updatedImg;
@@ -419,7 +638,7 @@ export default function ObjectEraserPage() {
 
   return (
     <ToolPageShell
-      title="Local Object Eraser"
+      title="Object Eraser"
       subtitle="Erase unwanted objects, text headers, watermarks, or blemishes from photos locally and privately."
       features={_FEATURES}
       steps={_STEPS}

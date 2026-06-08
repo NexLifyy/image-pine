@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Image Pine - Crop JPG Images",
+  title: "ImagePine - Crop JPG Images",
   description: "Crop JPG/JPEG images online. Adjust the crop box to remove unwanted borders or match aspect ratios.",
 };
 

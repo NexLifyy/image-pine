@@ -23,7 +23,7 @@ const _STEPS = [
 
 const _FAQS = [
   { q: 'Can I add more than two text blocks?', a: 'Currently, the studio supports Top and Bottom captions. You can drag them anywhere on the image.' },
-  { q: 'Is there a watermark on exported memes?', a: 'No. Image Pine is completely free, open-source, and does not add any watermarks to your creations.' },
+  { q: 'Is there a watermark on exported memes?', a: 'No. ImagePine is completely free, open-source, and does not add any watermarks to your creations.' },
   { q: 'Does it work with PNG transparent templates?', a: 'Yes. PNG transparency is preserved in the final generated meme.' }
 ];
 

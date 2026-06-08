@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Image Pine - WebP to PNG Converter",
+  title: "ImagePine - WebP to PNG Converter",
   description: "Convert WebP images to PNG to preserve lossless quality and transparency support.",
 };
 

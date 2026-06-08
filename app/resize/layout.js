@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Image Pine - Resize Images",
+  title: "ImagePine - Resize Images",
   description: "Resize images online for free. Set custom widths, heights, aspect ratios, or percentage scaling.",
 };
 

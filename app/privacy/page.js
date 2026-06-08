@@ -69,7 +69,7 @@ export default function PrivacyPage() {
             maxWidth: 580,
             margin: '0 auto'
           }}>
-            At Image Pine, privacy is not a feature—it is the foundation of our software. Learn how your files remain entirely yours.
+            At ImagePine, privacy is not a feature—it is the foundation of our software. Learn how your files remain entirely yours.
           </p>
         </section>
 
@@ -87,7 +87,7 @@ export default function PrivacyPage() {
               </svg>
             </div>
             <div>
-              <h4 style={{ fontSize: 13, fontWeight: 800, color: '#111128', margin: '0 0 4px' }}>The Image Pine Promise</h4>
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: '#111128', margin: '0 0 4px' }}>The ImagePine Promise</h4>
               <p style={{ fontSize: 11, color: '#5B5BD6', lineHeight: 1.6, margin: 0, fontWeight: 600 }}>
                 We do not collect, store, transmit, or inspect your images, PDFs, or private directories. Everything happens inside your web browser.
               </p>
@@ -97,7 +97,7 @@ export default function PrivacyPage() {
           <div>
             <h2 style={h2Style}>1. Local-First Processing</h2>
             <p style={{ ...pStyle, marginTop: 12 }}>
-              Unlike traditional image hosting or online conversion platforms, Image Pine uses <strong>client-side execution</strong>. When you drag and drop a file, your browser reads the image format directly from your device storage into memory.
+              Unlike traditional image hosting or online conversion platforms, ImagePine uses <strong>client-side execution</strong>. When you drag and drop a file, your browser reads the image format directly from your device storage into memory.
             </p>
             <p style={{ ...pStyle, marginTop: 10 }}>
               All filters, canvas transforms, quality compression, resizing scripts, and conversion modules run locally on your device's web sandbox. The processing is completed entirely offline inside your browser tab.

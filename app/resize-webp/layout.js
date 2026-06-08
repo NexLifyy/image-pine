@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Image Pine - Resize WebP Images",
+  title: "ImagePine - Resize WebP Images",
   description: "Resize WebP images online for websites and applications to speed up page loads.",
 };
 

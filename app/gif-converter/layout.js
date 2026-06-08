@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Image Pine - GIF Converter",
+  title: "ImagePine - GIF Converter",
   description: "Convert video or images to high-quality animated GIFs, or convert GIFs to static image formats.",
 };
 

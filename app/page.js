@@ -429,7 +429,7 @@ export default function Home() {
     const ext=getExtensionForMime(mime,selectedFile.name);
     const base=selectedFile.name.replace(/\.[^/.]+$/,'');
     saveAs(blob,`${base}_edited.${ext}`);
-    saveHistory('Image Pine Studio',`${base}_edited.${ext} (${wF}x${hF})`);
+    saveHistory('ImagePine Studio',`${base}_edited.${ext} (${wF}x${hF})`);
   };
 
   const formatSize = (b) => {
@@ -805,7 +805,7 @@ export default function Home() {
       <section style={{borderTop:'1px solid #E4E4EF',background:'#fff',padding:'72px 24px'}}>
         <div style={{maxWidth:1060,margin:'0 auto'}}>
           <div style={{textAlign:'center',marginBottom:48}}>
-            <span style={{display:'inline-block',background:'#EDEDFB',color:'#5B5BD6',fontSize:11,fontWeight:700,padding:'4px 14px',borderRadius:99,letterSpacing:'0.05em',textTransform:'uppercase',marginBottom:14,border:'1px solid #D8D8F5'}}>Why Image Pine</span>
+            <span style={{display:'inline-block',background:'#EDEDFB',color:'#5B5BD6',fontSize:11,fontWeight:700,padding:'4px 14px',borderRadius:99,letterSpacing:'0.05em',textTransform:'uppercase',marginBottom:14,border:'1px solid #D8D8F5'}}>Why ImagePine</span>
             <h2 style={{fontSize:'clamp(22px,4vw,34px)',fontWeight:900,color:'#111128',letterSpacing:'-0.03em',margin:'0 0 10px'}}>Everything you need, nothing you don't</h2>
             <p style={{fontSize:15,color:'#6B6B8A',fontWeight:400,maxWidth:460,margin:'0 auto'}}>A complete image toolkit built for speed, simplicity, and privacy.</p>
           </div>
@@ -883,7 +883,7 @@ export default function Home() {
       {/* ═══ FOOTER ═══ */}
       <footer style={{borderTop:'1px solid #E4E4EF',background:'#F7F7FB',padding:'32px 24px',textAlign:'center'}}>
         <p style={{fontSize:13,color:'#9898B5',fontWeight:500,margin:0}}>
-          <span style={{fontWeight:800,color:'#5B5BD6'}}>Image Pine</span> · Free browser-based image editor · No account needed · 100% private
+          <span style={{fontWeight:800,color:'#5B5BD6'}}>ImagePine</span> · Free browser-based image editor · No account needed · 100% private
         </p>
       </footer>
 

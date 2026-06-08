@@ -116,7 +116,7 @@ export default function WatermarkPage() {
   const [type, setType] = useState('text'); // 'text' | 'image'
   
   // Text Watermark settings
-  const [text, setText] = useState('Image Pine');
+  const [text, setText] = useState('ImagePine');
   const [fontFamily, setFontFamily] = useState('sans-serif');
   const [fontSize, setFontSize] = useState(36);
   const [color, setColor] = useState('#ffffff');

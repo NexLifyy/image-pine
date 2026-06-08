@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Image Pine - Compress PNG Images",
+  title: "ImagePine - Compress PNG Images",
   description: "Compress PNG images online. Shrink files while preserving transparent backgrounds and clear details.",
 };
 

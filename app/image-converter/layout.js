@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Image Pine - Image Converter",
+  title: "ImagePine - Image Converter",
   description: "Convert images between popular formats like PNG, JPG, WebP, SVG, and GIF instantly.",
 };
 

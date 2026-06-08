@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Image Pine - Bulk Resize Images",
+  title: "ImagePine - Bulk Resize Images",
   description: "Resize multiple images at once. Set custom dimensions in pixels or percentages. Supports JPG, PNG, and WebP.",
 };
 

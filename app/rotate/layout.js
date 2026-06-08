@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Image Pine - Rotate Images",
+  title: "ImagePine - Rotate Images",
   description: "Rotate images clockwise, counter-clockwise, 180 degrees, or to any custom angle online.",
 };
 

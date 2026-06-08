@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Image Pine - HEIC to JPG Converter",
+  title: "ImagePine - HEIC to JPG Converter",
   description: "Convert HEIC/HEIF photos from iPhone or iPad to standard JPEG/JPG format completely locally.",
 };
 

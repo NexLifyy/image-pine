@@ -60,7 +60,7 @@ export default function AboutPage() {
               background: 'linear-gradient(135deg, #5B5BD6 0%, #7C3AED 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
-            }}>Image Pine</span>
+            }}>ImagePine</span>
           </h1>
           <p style={{
             fontSize: 'clamp(14px, 2vw, 17px)',
@@ -69,7 +69,7 @@ export default function AboutPage() {
             maxWidth: 580,
             margin: '0 auto'
           }}>
-            We believe image editing should be fast, accessible, and completely private. Image Pine runs entirely in your browser—your files never leave your device.
+            We believe image editing should be fast, accessible, and completely private. ImagePine runs entirely in your browser—your files never leave your device.
           </p>
         </section>
 
@@ -82,7 +82,7 @@ export default function AboutPage() {
             Most online image editors require you to upload your files to their servers. This is slow, wastes bandwidth, and presents significant privacy risks for sensitive documents, personal photos, or corporate designs.
           </p>
           <p style={{ fontSize: 14, color: '#6B6B8A', lineHeight: 1.7, margin: 0 }}>
-            <strong>Image Pine is different.</strong> By utilizing modern browser capabilities such as HTML5 Canvas, WebAssembly, and local JavaScript processing, we process all images locally on your CPU and GPU. There are no backend upload APIs, no image databases, and no security risks.
+            <strong>ImagePine is different.</strong> By utilizing modern browser capabilities such as HTML5 Canvas, WebAssembly, and local JavaScript processing, we process all images locally on your CPU and GPU. There are no backend upload APIs, no image databases, and no security risks.
           </p>
 
           <div style={{ height: 1, background: '#E4E4EF', margin: '16px 0' }} />
@@ -149,7 +149,7 @@ export default function AboutPage() {
             Under The Hood
           </h2>
           <p style={{ fontSize: 14, color: '#6B6B8A', lineHeight: 1.7, margin: 0 }}>
-            Image Pine leverages high-efficiency algorithms that run inside your browser. Here is a look at the technologies we use to provide offline-capable, studio-grade processing:
+            ImagePine leverages high-efficiency algorithms that run inside your browser. Here is a look at the technologies we use to provide offline-capable, studio-grade processing:
           </p>
           <ul style={{ paddingLeft: 20, margin: 0, display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: '#6B6B8A', lineHeight: 1.6 }}>
             <li><strong>HTML5 Canvas 2D API:</strong> Powers high-quality pixel resampling, flipping, and rotational transforms.</li>

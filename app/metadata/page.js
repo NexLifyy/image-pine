@@ -305,7 +305,7 @@ export default function MetadataPage() {
     { q: 'What metadata streams are stored inside photos?', a: 'Exchangeable Image File Format (EXIF) lists camera settings and GPS. Extensible Metadata Platform (XMP) holds editor histories and cataloging. IPTC stores copyrights and captions. COM is plain-text comments.' },
     { q: 'Does stripping metadata reduce image quality?', a: 'No. Our utility operates directly on the JPEG file segments, removing headers like APP1 and APP13 without touching or re-compressing the actual image bytes. Quality remains 100% identical.' },
     { q: 'Why should I strip metadata before sharing?', a: 'Photos shot on smartphones default to storing highly precise GPS coordinates, serial numbers, camera specifications, and software versions. Sharing these online exposes your private details.' },
-    { q: 'Is my data secure on Image Pine?', a: 'Absolutely. All processing occurs locally inside your browser tab using JavaScript APIs. No data is uploaded or transmitted to any server.' }
+    { q: 'Is my data secure on ImagePine?', a: 'Absolutely. All processing occurs locally inside your browser tab using JavaScript APIs. No data is uploaded or transmitted to any server.' }
   ];
 
   const handleFileSelect = (newFiles) => {

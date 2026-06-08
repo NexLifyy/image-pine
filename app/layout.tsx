@@ -13,7 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Image Pine - Resize, Compress and do anything with Image",
+  title: "ImagePine - Resize, Compress and do anything with Image",
   description:
     "Free online image editor. Resize, compress, rotate, flip and convert images instantly in your browser. No upload needed - 100% private.",
   keywords: "image resizer, image compressor, rotate image, flip image, free image editor online",

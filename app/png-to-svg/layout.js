@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Image Pine - PNG to SVG Converter",
+  title: "ImagePine - PNG to SVG Converter",
   description: "Convert PNG raster graphics to SVG vector paths online for scalable illustrations.",
 };
 
