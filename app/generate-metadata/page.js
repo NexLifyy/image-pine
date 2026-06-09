@@ -389,6 +389,18 @@ const getCookie = (name) => {
 export default function GenerateMetadataPage() {
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [toast, setToast] = useState(null); // { message, type }
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type });
+  };
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   // Dynamic API Keys configuration
   const [apiKeys, setApiKeys] = useState(['']); // Starts with one key input
@@ -537,10 +549,10 @@ export default function GenerateMetadataPage() {
     if (files.length + newFiles.length > 500) {
       const allowedCount = 500 - files.length;
       if (allowedCount <= 0) {
-        alert("Upload limit is 500 files. You cannot upload any more files.");
+        showToast("Upload limit is 500 files. You cannot upload any more files.", "error");
         return;
       }
-      alert(`Upload limit is 500 files. Only the first ${allowedCount} files have been added.`);
+      showToast(`Upload limit is 500 files. Only the first ${allowedCount} files have been added.`, "warning");
       newFiles = newFiles.slice(0, allowedCount);
     }
 
@@ -602,14 +614,14 @@ export default function GenerateMetadataPage() {
 
   const startGeneration = async () => {
     if (files.length === 0) {
-      alert("No files uploaded. Please upload at least one file.");
+      showToast("No files uploaded. Please upload at least one file.", "error");
       return;
     }
 
     const activeKeys = apiKeys.filter(k => k.trim() !== '');
     if (activeKeys.length === 0) {
       setShowConfig(true);
-      alert("Please configure and save at least one Groq API Key under 'API Configuration' first.");
+      showToast("Please configure and save at least one Groq API Key under 'API Configuration' first.", "warning");
       return;
     }
 
@@ -623,7 +635,7 @@ export default function GenerateMetadataPage() {
     });
 
     if (pendingFiles.length === 0) {
-      alert("All uploaded files already have completed metadata.");
+      showToast("All uploaded files already have completed metadata.", "info");
       setIsGenerating(false);
       isGeneratingRef.current = false;
       return;
@@ -797,7 +809,7 @@ export default function GenerateMetadataPage() {
 
   const downloadCsv = () => {
     if (files.length === 0) {
-      alert("No data available to export.");
+      showToast("No data available to export.", "error");
       return;
     }
 
@@ -1473,6 +1485,81 @@ export default function GenerateMetadataPage() {
 
             </div>
 
+          </div>
+        )}
+
+        {toast && (
+          <div 
+            style={{
+              position: 'fixed',
+              bottom: 24,
+              right: 24,
+              background: toast.type === 'error' ? '#FFF5F5' : toast.type === 'success' ? '#ECFDF5' : toast.type === 'warning' ? '#FFFBEB' : '#F4F4F5',
+              border: `1px solid ${toast.type === 'error' ? '#FCA5A5' : toast.type === 'success' ? '#A7F3D0' : toast.type === 'warning' ? '#FDE68A' : '#E4E4E7'}`,
+              color: toast.type === 'error' ? '#B91C1C' : toast.type === 'success' ? '#065F46' : toast.type === 'warning' ? '#92400E' : '#27272A',
+              padding: '12px 20px',
+              borderRadius: 12,
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              fontSize: 13,
+              fontWeight: 700,
+              animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+            }}
+          >
+            <style dangerouslySetInnerHTML={{__html: `
+              @keyframes slideUp {
+                from { transform: translateY(20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+              }
+            `}} />
+            {toast.type === 'error' && (
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12" y2="16" />
+              </svg>
+            )}
+            {toast.type === 'success' && (
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+            {toast.type === 'warning' && (
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12" y2="17" />
+              </svg>
+            )}
+            {toast.type === 'info' && (
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12" y2="8" />
+              </svg>
+            )}
+            <span>{toast.message}</span>
+            <button 
+              onClick={() => setToast(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'currentColor',
+                cursor: 'pointer',
+                marginLeft: 8,
+                padding: 2,
+                display: 'flex',
+                alignItems: 'center',
+                opacity: 0.7
+              }}
+            >
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         )}
 
