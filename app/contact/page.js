@@ -9,16 +9,43 @@ export default function ContactPage() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !email || !message) return;
     setIsSubmitting(true);
-    // Simulate submission delay
-    setTimeout(() => {
+    setErrorMsg('');
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          access_key: 'd152ecf8-147d-4b5e-88fa-26856110c736',
+          name: name,
+          email: email,
+          subject: subject || 'Contact from ImagePine',
+          message: message,
+          from_name: 'ImagePine Contact Support'
+        })
+      });
+
+      const result = await response.json();
+      if (response.status === 200 || result.success) {
+        setFormSubmitted(true);
+      } else {
+        setErrorMsg(result.message || 'Something went wrong. Please try again.');
+      }
+    } catch (error) {
+      console.error('Web3Forms submit error:', error);
+      setErrorMsg('Failed to send message. Please check your internet connection and try again.');
+    } finally {
       setIsSubmitting(false);
-      setFormSubmitted(true);
-    }, 1200);
+    }
   };
 
   const cardStyle = {
@@ -198,6 +225,12 @@ export default function ContactPage() {
                     onBlur={e => { e.target.style.borderColor = '#E4E4EF'; e.target.style.background = '#F7F7FB'; }}
                   />
                 </div>
+
+                {errorMsg && (
+                  <p style={{ color: '#EF4444', fontSize: 13, fontWeight: 700, margin: '2px 0 6px' }}>
+                    {errorMsg}
+                  </p>
+                )}
 
                 <button
                   type="submit"
