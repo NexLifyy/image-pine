@@ -67,13 +67,13 @@ const _FEATURES = [
         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
     ),
-    title: '100% Client-Side Keys',
-    desc: 'Your API keys are stored solely in your browser\'s local storage. Image Pine never uploads your keys or files to private servers.'
+    title: '100% Secure Cookies',
+    desc: 'Your API keys are stored securely as browser cookies locally on your device and are never sent to external servers.'
   }
 ];
 
 const _STEPS = [
-  { n: '1', title: 'Add API Keys & Upload', desc: 'Configure your Grok API keys and upload up to 500 images.' },
+  { n: '1', title: 'Save API Keys & Upload', desc: 'Add your Grok API key, save it to cookies, and upload up to 500 images.' },
   { n: '2', title: 'Set Rules & Generate', desc: 'Choose your desired title length, keyword formats, and trigger the batch generator.' },
   { n: '3', title: 'Edit & Download CSV', desc: 'Verify and refine results directly in the app, then download the structured CSV file.' }
 ];
@@ -258,15 +258,40 @@ const callGrokApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, mode
   throw new Error("Failed to process API requests.");
 };
 
+// Cookie Helpers
+const setCookie = (name, value, days = 365) => {
+  if (typeof window !== "undefined") {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    const expires = "; expires=" + date.toUTCString();
+    document.cookie = name + "=" + encodeURIComponent(value || "") + expires + "; path=/; SameSite=Strict; Secure";
+  }
+};
+
+const getCookie = (name) => {
+  if (typeof window !== "undefined") {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+    }
+  }
+  return null;
+};
+
 export default function GenerateMetadataPage() {
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
 
-  // Configuration settings (API details)
-  const [apiKeys, setApiKeys] = useState(['', '', '']);
-  const [modelName, setModelName] = useState('grok-2-vision-1212');
+  // Dynamic API Keys configuration
+  const [apiKeys, setApiKeys] = useState(['']); // Starts with one key input
   const [showConfig, setShowConfig] = useState(true);
   const [showKeys, setShowKeys] = useState([false, false, false]);
+  const [isSaved, setIsSaved] = useState(false);
+  const [testStatus, setTestStatus] = useState(''); // 'testing' | 'success' | 'failed' | ''
+  const [testMessage, setTestMessage] = useState('');
 
   // Sliders and options
   const [titleLength, setTitleLength] = useState(150);
@@ -278,55 +303,122 @@ export default function GenerateMetadataPage() {
   // Queue Generation State
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [logs, setLogs] = useState([]);
   const [metadataMap, setMetadataMap] = useState({});
 
-  const logsEndRef = useRef(null);
   const isGeneratingRef = useRef(false);
   const currentKeyIndexRef = useRef(0);
+  const modelName = 'grok-2-vision-1212'; // Hardcoded model
 
-  // Load configuration from local storage on mount
+  // Load API keys from browser cookies on mount
   useEffect(() => {
-    const k1 = localStorage.getItem('grok_key_1') || '';
-    const k2 = localStorage.getItem('grok_key_2') || '';
-    const k3 = localStorage.getItem('grok_key_3') || '';
-    const mdl = localStorage.getItem('grok_model') || 'grok-2-vision-1212';
+    const k1 = getCookie('grok_key_1') || '';
+    const k2 = getCookie('grok_key_2') || '';
+    const k3 = getCookie('grok_key_3') || '';
     
-    setApiKeys([k1, k2, k3]);
-    setModelName(mdl);
+    const loaded = [];
+    if (k1) loaded.push(k1);
+    if (k2) loaded.push(k2);
+    if (k3) loaded.push(k3);
     
-    // Auto collapse keys card if keys already exist
-    if (k1 || k2 || k3) {
-      setShowConfig(false);
+    if (loaded.length > 0) {
+      setApiKeys(loaded);
+      setIsSaved(true);
+      setShowConfig(false); // Collapse box since keys exist
+    } else {
+      setApiKeys(['']);
+      setIsSaved(false);
     }
   }, []);
 
-  // Auto scroll logs
-  useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
+  const addLog = (text, type = 'info') => {
+    const time = new Date().toLocaleTimeString();
+    const formatted = `[${time}] [${type.toUpperCase()}] ${text}`;
+    if (type === 'error') console.error(formatted);
+    else if (type === 'warning') console.warn(formatted);
+    else console.log(formatted);
+  };
 
-  const saveApiKey = (index, val) => {
+  const handleKeyChange = (index, val) => {
     const updated = [...apiKeys];
     updated[index] = val;
     setApiKeys(updated);
-    localStorage.setItem(`grok_key_${index + 1}`, val);
+    setIsSaved(false); // Need to save again
+    setTestStatus('');
+    setTestMessage('');
   };
 
-  const saveModelName = (val) => {
-    setModelName(val);
-    localStorage.setItem('grok_model', val);
+  const addKeyField = () => {
+    if (apiKeys.length < 3) {
+      setApiKeys([...apiKeys, '']);
+      setIsSaved(false);
+      setTestStatus('');
+      setTestMessage('');
+    }
   };
 
-  const addLog = (text, type = 'info') => {
-    setLogs(prev => [
-      ...prev,
-      {
-        time: new Date().toLocaleTimeString(),
-        type,
-        text
+  const removeKeyField = (index) => {
+    if (apiKeys.length > 1) {
+      const updated = apiKeys.filter((_, idx) => idx !== index);
+      setApiKeys(updated);
+      setIsSaved(false);
+      setTestStatus('');
+      setTestMessage('');
+    }
+  };
+
+  const handleSaveApi = () => {
+    // Save to cookies
+    setCookie('grok_key_1', apiKeys[0] || '', 365);
+    setCookie('grok_key_2', apiKeys[1] || '', 365);
+    setCookie('grok_key_3', apiKeys[2] || '', 365);
+    setIsSaved(true);
+    setTestStatus('');
+    setTestMessage('API Keys saved securely in browser cookies.');
+    addLog("API keys updated in cookies.", "success");
+    setTimeout(() => setTestMessage(''), 3000);
+  };
+
+  const handleTestApi = async () => {
+    const firstKey = apiKeys[0];
+    if (!firstKey) {
+      setTestStatus('failed');
+      setTestMessage('No API key configured to test.');
+      return;
+    }
+
+    setTestStatus('testing');
+    setTestMessage('Testing API Key 1 connection...');
+    addLog("Testing key 1 with simple ping...", "info");
+
+    try {
+      const response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${firstKey}`
+        },
+        body: JSON.stringify({
+          model: 'grok-2',
+          messages: [{ role: 'user', content: 'Ping' }],
+          max_tokens: 2
+        })
+      });
+
+      if (response.ok) {
+        setTestStatus('success');
+        setTestMessage('Test Successful! API Connection is valid.');
+        addLog("API check passed.", "success");
+      } else {
+        const text = await response.text();
+        setTestStatus('failed');
+        setTestMessage(`Test failed (Status ${response.status})`);
+        addLog(`API check failed: ${text}`, "error");
       }
-    ]);
+    } catch (err) {
+      setTestStatus('failed');
+      setTestMessage(`Connection error: ${err.message}`);
+      addLog(`API connection error: ${err.message}`, "error");
+    }
   };
 
   const handleFileSelect = (newFiles) => {
@@ -374,19 +466,20 @@ export default function GenerateMetadataPage() {
     setSelectedFile(null);
     setMetadataMap({});
     setProgress(0);
-    setLogs([]);
+    setTestMessage('');
+    setTestStatus('');
   };
 
   const startGeneration = async () => {
     if (files.length === 0) {
-      addLog("No files uploaded. Please upload at least one image.", "error");
+      alert("No files uploaded. Please upload at least one image.");
       return;
     }
 
     const activeKeys = apiKeys.filter(k => k.trim() !== '');
     if (activeKeys.length === 0) {
       setShowConfig(true);
-      addLog("Please configure at least one Grok API Key under 'API Configuration' first.", "error");
+      alert("Please configure and save at least one Grok API Key under 'API Configuration' first.");
       return;
     }
 
@@ -400,7 +493,7 @@ export default function GenerateMetadataPage() {
     });
 
     if (pendingFiles.length === 0) {
-      addLog("All uploaded images already have completed metadata.", "success");
+      alert("All uploaded images already have completed metadata.");
       setIsGenerating(false);
       isGeneratingRef.current = false;
       return;
@@ -617,7 +710,7 @@ export default function GenerateMetadataPage() {
               <div>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111128', margin: 0 }}>API Configuration</h3>
                 <p style={{ fontSize: 11, color: '#9898B5', margin: '2px 0 0' }}>
-                  {numConfiguredKeys > 0 ? `${numConfiguredKeys} of 3 keys active` : 'Enter Grok keys to start'}
+                  {numConfiguredKeys > 0 ? `${numConfiguredKeys} key${numConfiguredKeys > 1 ? 's' : ''} configured` : 'Enter Grok keys to start'}
                 </p>
               </div>
             </div>
@@ -637,21 +730,18 @@ export default function GenerateMetadataPage() {
           {showConfig && (
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F1F1F7', display: 'flex', flexDirection: 'column', gap: 14 }} className="animate-fade-in">
               <p style={{ fontSize: 12, color: '#6B6B8A', margin: 0, lineHeight: 1.5 }}>
-                Provide up to three **xAI Grok API Keys**. Keys are stored directly in your local browser and are only sent directly to xAI. If key 1 hits a rate limit (HTTP 429), rotation fallbacks will proceed to key 2, then key 3.
+                Provide up to three **xAI Grok API Keys**. Keys are stored securely in browser cookies and sent directly to xAI. If key 1 hits a rate limit (HTTP 429), rotation fallbacks will proceed to key 2, then key 3.
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[0, 1, 2].map((idx) => (
-                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: '#6B6B8A' }}>
-                      Grok API Key {idx + 1} {idx === 0 && <span style={{ color: '#EF4444' }}>*</span>}
-                    </label>
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {apiKeys.map((key, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
                       <input
                         type={showKeys[idx] ? 'text' : 'password'}
-                        value={apiKeys[idx]}
-                        onChange={(e) => saveApiKey(idx, e.target.value)}
-                        placeholder={`xai-key-${idx + 1}...`}
+                        value={key}
+                        onChange={(e) => handleKeyChange(idx, e.target.value)}
+                        placeholder={`Grok API Key ${idx + 1}`}
                         style={{
                           width: '100%', padding: '9px 40px 9px 12px',
                           background: '#F7F7FB', border: '1px solid #E4E4EF',
@@ -683,25 +773,90 @@ export default function GenerateMetadataPage() {
                         )}
                       </button>
                     </div>
+                    {apiKeys.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeKeyField(idx)}
+                        style={{
+                          background: '#FFF5F5', border: '1px solid #FECACA', color: '#EF4444',
+                          borderRadius: 9, padding: '9px 12px', cursor: 'pointer', fontSize: 13, fontWeight: 700
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
                 ))}
+
+                {apiKeys.length < 3 && (
+                  <button
+                    type="button"
+                    onClick={addKeyField}
+                    style={{
+                      alignSelf: 'flex-start', background: '#F1F1F7', border: '1px solid #E4E4EF',
+                      borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 11, fontWeight: 750,
+                      color: '#7342E6', display: 'flex', alignItems: 'center', gap: 4
+                    }}
+                  >
+                    + Add More API Key
+                  </button>
+                )}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxWidth: 300 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#6B6B8A' }}>Grok Model</label>
-                <input
-                  type="text"
-                  value={modelName}
-                  onChange={(e) => saveModelName(e.target.value)}
-                  placeholder="grok-2-vision-1212"
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={handleSaveApi}
                   style={{
-                    width: '100%', padding: '9px 12px',
-                    background: '#F7F7FB', border: '1px solid #E4E4EF',
-                    borderRadius: 9, fontSize: 13, fontWeight: 600,
-                    color: '#111128', outline: 'none'
+                    background: 'linear-gradient(135deg, #7342E6 0%, #5B5BD6 100%)',
+                    color: '#fff', fontWeight: 700, fontSize: 12, padding: '8px 18px',
+                    borderRadius: 10, border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(115,66,230,0.15)'
                   }}
-                />
+                >
+                  Save API
+                </button>
+
+                {isSaved && (
+                  <button
+                    type="button"
+                    onClick={handleTestApi}
+                    disabled={testStatus === 'testing'}
+                    style={{
+                      background: testStatus === 'success' ? '#10B981' : testStatus === 'failed' ? '#EF4444' : '#fff',
+                      color: testStatus === 'success' || testStatus === 'failed' ? '#fff' : '#4E4E6D',
+                      fontWeight: 700, fontSize: 12, padding: '8px 18px',
+                      borderRadius: 10, border: `1px solid ${testStatus === 'success' ? '#10B981' : testStatus === 'failed' ? '#EF4444' : '#D1D1E4'}`,
+                      cursor: testStatus === 'testing' ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {testStatus === 'testing' ? 'Testing...' : testStatus === 'success' ? 'Active' : testStatus === 'failed' ? 'Failed - Retry' : 'Test API'}
+                  </button>
+                )}
+
+                <a
+                  href="https://console.x.ai/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    textDecoration: 'none', background: '#F1F1F7', color: '#4E4E6D',
+                    fontWeight: 700, fontSize: 12, padding: '8px 18px', borderRadius: 10,
+                    border: '1px solid #E4E4EF', display: 'inline-flex', alignItems: 'center'
+                  }}
+                >
+                  Get API key
+                </a>
               </div>
+
+              {testMessage && (
+                <p 
+                  style={{
+                    fontSize: 11, fontWeight: 600, margin: '8px 0 0',
+                    color: testStatus === 'success' ? '#10B981' : testStatus === 'failed' ? '#EF4444' : '#7342E6'
+                  }}
+                >
+                  {testMessage}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -815,7 +970,7 @@ export default function GenerateMetadataPage() {
               
               {/* Left Column: List of 500 Images (Sidebar) */}
               <div className="lg:col-span-3" style={{ background: '#fff', border: '1px solid #E4E4EF', borderRadius: 20, padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 600, overflowY: 'auto' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F1F7', paddingBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContext: 'space-between', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F1F7', paddingBottom: 8 }}>
                   <h4 style={{ fontSize: 10, fontWeight: 800, color: '#9898B5', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
                     Uploads ({files.length})
                   </h4>
@@ -1083,8 +1238,8 @@ export default function GenerateMetadataPage() {
                 )}
               </div>
 
-              {/* Right Column: Settings & Live Console */}
-              <div className="grid grid-cols-1 gap-5 lg:col-span-4">
+              {/* Right Column: Settings */}
+              <div className="lg:col-span-4" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 
                 {/* METADATA RULES SETTINGS CARD */}
                 <div style={{ background: '#fff', border: '1px solid #E4E4EF', borderRadius: 20, padding: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1181,51 +1336,6 @@ export default function GenerateMetadataPage() {
                         color: '#111128', outline: 'none', resize: 'none'
                       }}
                     />
-                  </div>
-                </div>
-
-                {/* API TERMINAL LOG CONSOLE */}
-                <div style={{ background: '#111128', border: '1px solid #2d2d42', borderRadius: 20, padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #2d2d42', paddingBottom: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444' }} />
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />
-                      <h4 style={{ fontSize: 10, fontWeight: 850, color: '#9898B5', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0 6px', fontFamily: 'monospace' }}>
-                        Console Output
-                      </h4>
-                    </div>
-
-                    <button
-                      onClick={() => setLogs([])}
-                      style={{ background: 'none', border: 'none', color: '#6B6B8A', fontSize: 9, fontWeight: 700, cursor: 'pointer', fontFamily: 'monospace' }}
-                      onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                      onMouseLeave={e => e.currentTarget.style.color = '#6B6B8A'}
-                    >
-                      Clear Log
-                    </button>
-                  </div>
-
-                  {/* Log Print View */}
-                  <div style={{ height: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, padding: '4px 0', fontFamily: 'monospace', fontSize: 10 }}>
-                    {logs.length > 0 ? (
-                      logs.map((log, lIdx) => {
-                        let col = '#E4E4EF';
-                        if (log.type === 'warning') col = '#F59E0B';
-                        else if (log.type === 'error') col = '#EF4444';
-                        else if (log.type === 'success') col = '#10B981';
-
-                        return (
-                          <div key={lIdx} style={{ display: 'flex', gap: 6, lineBreak: 'anywhere' }}>
-                            <span style={{ color: '#6B6B8A', flexShrink: 0 }}>[{log.time}]</span>
-                            <span style={{ color: col }}>{log.text}</span>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <span style={{ color: '#6B6B8A', fontStyle: 'italic' }}>Terminal idle. Waiting for operations...</span>
-                    )}
-                    <div ref={logsEndRef} />
                   </div>
                 </div>
 
