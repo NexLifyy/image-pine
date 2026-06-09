@@ -47,6 +47,10 @@ export default function UploadBox({
         map['image/heic'] = ['.heic'];
         map['image/heif'] = ['.heif'];
       } else if (f === '.pdf') map['application/pdf'] = ['.pdf'];
+      else if (f === '.mp4')  map['video/mp4'] = ['.mp4'];
+      else if (f === '.webm') map['video/webm'] = ['.webm'];
+      else if (f === '.mov')  map['video/quicktime'] = ['.mov'];
+      else if (f === '.ogg')  map['video/ogg'] = ['.ogg'];
       else {
         map['application/octet-stream'] = [...(map['application/octet-stream'] || []), f];
       }

@@ -16,8 +16,8 @@ const _FEATURES = [
         <line x1="12" y1="22.08" x2="12" y2="12" />
       </svg>
     ),
-    title: 'Grok-Powered Vision',
-    desc: 'Uses xAI\'s state-of-the-art vision models to extract highly descriptive and relevant metadata tags from images.'
+    title: 'Groq-Powered Vision',
+    desc: 'Uses Groq\'s high-speed Llama 3.2 vision models to extract highly descriptive and relevant metadata tags from assets instantly.'
   },
   {
     icon: (
@@ -26,8 +26,8 @@ const _FEATURES = [
         <line x1="9" y1="3" x2="9" y2="21" />
       </svg>
     ),
-    title: 'Up to 500 Images',
-    desc: 'Efficiently batch process lists of up to 500 images sequentially with a visual progress bar and real-time dashboard.'
+    title: 'Up to 500 Files',
+    desc: 'Efficiently batch process lists of up to 500 images, video frames, and SVGs sequentially with a visual progress bar.'
   },
   {
     icon: (
@@ -73,19 +73,19 @@ const _FEATURES = [
 ];
 
 const _STEPS = [
-  { n: '1', title: 'Save API Keys & Upload', desc: 'Add your Grok API key, save it to cookies, and upload up to 500 images.' },
+  { n: '1', title: 'Save API Keys & Upload', desc: 'Add your Groq API key, save it to cookies, and upload up to 500 files.' },
   { n: '2', title: 'Set Rules & Generate', desc: 'Choose your desired title length, keyword formats, and trigger the batch generator.' },
   { n: '3', title: 'Edit & Download CSV', desc: 'Verify and refine results directly in the app, then download the structured CSV file.' }
 ];
 
 const _FAQS = [
-  { q: 'Where do I find my xAI Grok API key?', a: 'You can create and manage API keys by signing up on the xAI Console (console.x.ai). You will need to add credits to your xAI account to utilize their vision models.' },
-  { q: 'How does the fallback key rotation work?', a: 'Grok API keys have rate limits. By providing up to 3 keys, if the generator hits an HTTP 429 (Too Many Requests) error, it will immediately rotate to the next key and retry, keeping your large batch runs running smoothly.' },
-  { q: 'Are my images stored on xAI?', a: 'No, xAI does not store your images permanently; they are processed temporarily for metadata inference. Image Pine downscales the images to a maximum of 1024px before uploading to conserve your bandwidth and API limits.' },
-  { q: 'Can I edit the generated titles and keywords before exporting?', a: 'Yes. Simply click any image in the sidebar to load it in the middle panel, where you can modify the title and keywords. The changes save instantly and will be reflected in the final CSV.' }
+  { q: 'Where do I find my Groq API key?', a: 'You can create and manage API keys by signing up on the Groq Console (console.groq.com/keys). You can utilize their high-speed vision models.' },
+  { q: 'How does the fallback key rotation work?', a: 'Groq API keys have rate limits. By providing up to 3 keys, if the generator hits an HTTP 429 (Too Many Requests) error, it will immediately rotate to the next key and retry, keeping your large batch runs running smoothly.' },
+  { q: 'Are my files stored on Groq?', a: 'No, Groq does not store your files permanently; they are processed temporarily for metadata inference. Image Pine downscales image frames locally before uploading to conserve your bandwidth and API limits.' },
+  { q: 'Can I edit the generated titles and keywords before exporting?', a: 'Yes. Simply click any file in the sidebar to load it in the middle panel, where you can modify the title and keywords. The changes save instantly and will be reflected in the final CSV.' }
 ];
 
-// Helper to construct Grok API Prompt
+// Helper to construct Groq API Prompt
 const buildPrompt = (settings) => {
   const { titleLength, keywordFormat, keywordLength, includeKeywords, excludeKeywords } = settings;
 
@@ -139,7 +139,65 @@ const parseGrokResponse = (text) => {
   }
 };
 
-// Helper to downscale and resize image locally to <= 1024px before base64
+// Helper to extract a representative frame from a Video file locally
+const getVideoFrameB64 = (fileObj) => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.preload = 'auto';
+    video.muted = true;
+    video.playsInline = true;
+    
+    const fileUrl = URL.createObjectURL(fileObj);
+    video.src = fileUrl;
+    
+    video.onloadeddata = () => {
+      // Seek to 1 second or 50% of duration to get a representative frame
+      const duration = video.duration || 10;
+      video.currentTime = Math.min(1.0, duration / 2);
+    };
+    
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const maxDim = 1024;
+        let width = video.videoWidth || 640;
+        let height = video.videoHeight || 480;
+        
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, width, height);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        const b64 = dataUrl.split(',')[1];
+        
+        URL.revokeObjectURL(fileUrl);
+        resolve({ b64, mimeType: 'image/jpeg' });
+      } catch (err) {
+        URL.revokeObjectURL(fileUrl);
+        reject(err);
+      }
+    };
+    
+    video.onerror = () => {
+      URL.revokeObjectURL(fileUrl);
+      reject(new Error("Failed to load video file."));
+    };
+  });
+};
+
+// Helper to downscale and resize image/SVG locally to <= 1024px before base64
 const getResizedImageB64 = (fileObj) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -182,11 +240,11 @@ const getResizedImageB64 = (fileObj) => {
   });
 };
 
-// API Call with 3-Key Fallback and Rotational Logic
+// API Call with 3-Key Fallback and Rotational Logic (Groq API Endpoint)
 const callGrokApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, model, currentKeyIdx, onKeySwitch) => {
   const activeKeys = apiKeys.filter(k => k.trim() !== '');
   if (activeKeys.length === 0) {
-    throw new Error("No API keys configured. Please configure at least one Grok API key.");
+    throw new Error("No API keys configured. Please configure at least one API key.");
   }
 
   let index = currentKeyIdx % activeKeys.length;
@@ -195,14 +253,14 @@ const callGrokApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, mode
   while (attempts < activeKeys.length) {
     const key = activeKeys[index];
     try {
-      const response = await fetch('https://api.x.ai/v1/chat/completions', {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${key}`
         },
         body: JSON.stringify({
-          model: model || 'grok-2-vision-1212',
+          model: model || 'llama-3.2-11b-vision-preview',
           messages: [
             {
               role: 'user',
@@ -307,7 +365,7 @@ export default function GenerateMetadataPage() {
 
   const isGeneratingRef = useRef(false);
   const currentKeyIndexRef = useRef(0);
-  const modelName = 'grok-2-vision-1212'; // Hardcoded model
+  const modelName = 'llama-3.2-11b-vision-preview'; // Hardcoded vision model for Groq
 
   // Load API keys from browser cookies on mount
   useEffect(() => {
@@ -367,10 +425,17 @@ export default function GenerateMetadataPage() {
   };
 
   const handleSaveApi = () => {
+    // Filter out any empty keys to prevent saving blank slots or rendering them on refresh
+    const cleanKeys = apiKeys.map(k => k.trim()).filter(Boolean);
+    const finalKeys = cleanKeys.length > 0 ? cleanKeys : [''];
+    
+    setApiKeys(finalKeys);
+
     // Save to cookies
-    setCookie('grok_key_1', apiKeys[0] || '', 365);
-    setCookie('grok_key_2', apiKeys[1] || '', 365);
-    setCookie('grok_key_3', apiKeys[2] || '', 365);
+    setCookie('grok_key_1', finalKeys[0] || '', 365);
+    setCookie('grok_key_2', finalKeys[1] || '', 365);
+    setCookie('grok_key_3', finalKeys[2] || '', 365);
+    
     setIsSaved(true);
     setTestStatus('');
     setTestMessage('API Keys saved securely in browser cookies.');
@@ -391,14 +456,14 @@ export default function GenerateMetadataPage() {
     addLog("Testing key 1 with simple ping...", "info");
 
     try {
-      const response = await fetch('https://api.x.ai/v1/chat/completions', {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${firstKey}`
         },
         body: JSON.stringify({
-          model: 'grok-2',
+          model: 'llama-3.2-11b-vision-preview',
           messages: [{ role: 'user', content: 'Ping' }],
           max_tokens: 2
         })
@@ -421,23 +486,39 @@ export default function GenerateMetadataPage() {
     }
   };
 
-  const handleFileSelect = (newFiles) => {
+  const handleFileSelect = async (newFiles) => {
     if (files.length + newFiles.length > 500) {
       const allowedCount = 500 - files.length;
       if (allowedCount <= 0) {
-        alert("Upload limit is 500 images. You cannot upload any more files.");
+        alert("Upload limit is 500 files. You cannot upload any more files.");
         return;
       }
-      alert(`Upload limit is 500 images. Only the first ${allowedCount} images have been added.`);
+      alert(`Upload limit is 500 files. Only the first ${allowedCount} files have been added.`);
       newFiles = newFiles.slice(0, allowedCount);
     }
 
-    const sanitized = newFiles.map(f => {
-      if (!f.preview && f.type?.startsWith('image/')) {
-        f.preview = URL.createObjectURL(f);
+    const sanitized = await Promise.all(newFiles.map(async (f) => {
+      if (!f.preview) {
+        const nameLower = f.name.toLowerCase();
+        const isVideoFile = f.type?.startsWith('video/') || ['.mp4', '.webm', '.mov', '.ogg'].some(ext => nameLower.endsWith(ext));
+        
+        if (isVideoFile) {
+          try {
+            // Generate locally a visual frame to represent the video thumbnail and upload payload
+            const { b64, mimeType } = await getVideoFrameB64(f);
+            f.preview = `data:${mimeType};base64,${b64}`;
+            f.isVideo = true;
+          } catch (e) {
+            console.error("Failed to capture video thumbnail:", e);
+            f.preview = null;
+            f.isVideo = true;
+          }
+        } else if (f.type?.startsWith('image/') || nameLower.endsWith('.svg')) {
+          f.preview = URL.createObjectURL(f);
+        }
       }
       return f;
-    });
+    }));
 
     setFiles(prev => [...prev, ...sanitized]);
     if (!selectedFile) setSelectedFile(sanitized[0]);
@@ -460,7 +541,9 @@ export default function GenerateMetadataPage() {
   const clearAllFiles = () => {
     if (isGenerating) stopGeneration();
     files.forEach(f => {
-      if (f.preview) URL.revokeObjectURL(f.preview);
+      if (f.preview && !f.preview.startsWith('data:')) {
+        URL.revokeObjectURL(f.preview);
+      }
     });
     setFiles([]);
     setSelectedFile(null);
@@ -472,20 +555,20 @@ export default function GenerateMetadataPage() {
 
   const startGeneration = async () => {
     if (files.length === 0) {
-      alert("No files uploaded. Please upload at least one image.");
+      alert("No files uploaded. Please upload at least one file.");
       return;
     }
 
     const activeKeys = apiKeys.filter(k => k.trim() !== '');
     if (activeKeys.length === 0) {
       setShowConfig(true);
-      alert("Please configure and save at least one Grok API Key under 'API Configuration' first.");
+      alert("Please configure and save at least one Groq API Key under 'API Configuration' first.");
       return;
     }
 
     setIsGenerating(true);
     isGeneratingRef.current = true;
-    addLog(`Starting metadata generation batch run for ${files.length} images...`, "info");
+    addLog(`Starting metadata generation batch run for ${files.length} files...`, "info");
 
     const pendingFiles = files.filter(f => {
       const meta = metadataMap[f.id];
@@ -493,7 +576,7 @@ export default function GenerateMetadataPage() {
     });
 
     if (pendingFiles.length === 0) {
-      alert("All uploaded images already have completed metadata.");
+      alert("All uploaded files already have completed metadata.");
       setIsGenerating(false);
       isGeneratingRef.current = false;
       return;
@@ -527,13 +610,23 @@ export default function GenerateMetadataPage() {
         }
       }));
       setSelectedFile(file); // Show the currently generating file in preview
-      addLog(`Resizing and loading: ${file.name}`, "info");
+      addLog(`Processing: ${file.name}`, "info");
 
       try {
-        // Step A: Downscale locally
-        const { b64, mimeType } = await getResizedImageB64(file);
+        let b64 = '';
+        let mimeType = 'image/jpeg';
 
-        // Step B: Send API Request
+        // Check if we already have the local raster frame captured (e.g. for video preview)
+        if (file.preview && file.preview.startsWith('data:image/')) {
+          b64 = file.preview.split(',')[1];
+        } else {
+          // Downscale image/SVG locally
+          const res = await getResizedImageB64(file);
+          b64 = res.b64;
+          mimeType = res.mimeType;
+        }
+
+        // Send API Request to Groq
         const { data, keyUsedIndex } = await callGrokApiWithFallback(
           b64,
           mimeType,
@@ -670,7 +763,7 @@ export default function GenerateMetadataPage() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     saveAs(blob, 'generated_image_metadata.csv');
     
-    saveHistory('Generate Metadata', `Exported CSV metadata for ${files.length} images`);
+    saveHistory('Generate Metadata', `Exported CSV metadata for ${files.length} files`);
   };
 
   const formatSize = (bytes) => {
@@ -687,11 +780,11 @@ export default function GenerateMetadataPage() {
   return (
     <ToolPageShell
       title="Generate Metadata"
-      subtitle="Instantly generate SEO tags, titles, and descriptions for your images using xAI's Grok API. Ideal for stock photography cataloging."
+      subtitle="Instantly generate SEO tags, titles, and descriptions for your files using Groq API. Ideal for stock photography cataloging."
       features={_FEATURES}
       steps={_STEPS}
       faqs={_FAQS}
-      seoText="Free online client-side AI Metadata Generator. Batch generate search engine metadata tags, file descriptions, and titles for your portfolio using Grok. Custom lengths, keyword rules, and local CSV downloads with total privacy."
+      seoText="Free online client-side AI Metadata Generator. Batch generate search engine metadata tags, file descriptions, and titles for your portfolio using Groq. Custom lengths, keyword rules, and local CSV downloads with total privacy."
     >
       <div className="flex flex-col gap-6">
 
@@ -710,7 +803,7 @@ export default function GenerateMetadataPage() {
               <div>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111128', margin: 0 }}>API Configuration</h3>
                 <p style={{ fontSize: 11, color: '#9898B5', margin: '2px 0 0' }}>
-                  {numConfiguredKeys > 0 ? `${numConfiguredKeys} key${numConfiguredKeys > 1 ? 's' : ''} configured` : 'Enter Grok keys to start'}
+                  {numConfiguredKeys > 0 ? `${numConfiguredKeys} key${numConfiguredKeys > 1 ? 's' : ''} configured` : 'Enter Groq keys to start'}
                 </p>
               </div>
             </div>
@@ -730,7 +823,7 @@ export default function GenerateMetadataPage() {
           {showConfig && (
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F1F1F7', display: 'flex', flexDirection: 'column', gap: 14 }} className="animate-fade-in">
               <p style={{ fontSize: 12, color: '#6B6B8A', margin: 0, lineHeight: 1.5 }}>
-                Provide up to three **xAI Grok API Keys**. Keys are stored securely in browser cookies and sent directly to xAI. If key 1 hits a rate limit (HTTP 429), rotation fallbacks will proceed to key 2, then key 3.
+                Provide up to three **Groq API Keys**. Keys are stored securely in browser cookies and sent directly to Groq. If key 1 hits a rate limit (HTTP 429), rotation fallbacks will proceed to key 2, then key 3.
               </p>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -741,7 +834,7 @@ export default function GenerateMetadataPage() {
                         type={showKeys[idx] ? 'text' : 'password'}
                         value={key}
                         onChange={(e) => handleKeyChange(idx, e.target.value)}
-                        placeholder={`Grok API Key ${idx + 1}`}
+                        placeholder={`Groq API Key ${idx + 1}`}
                         style={{
                           width: '100%', padding: '9px 40px 9px 12px',
                           background: '#F7F7FB', border: '1px solid #E4E4EF',
@@ -834,7 +927,7 @@ export default function GenerateMetadataPage() {
                 )}
 
                 <a
-                  href="https://console.x.ai/"
+                  href="https://console.groq.com/keys"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -866,13 +959,13 @@ export default function GenerateMetadataPage() {
           <div style={{ maxWidth: 680, margin: '0 auto', width: '100%' }}>
             <UploadBox
               onFileSelect={handleFileSelect}
-              acceptedFormats={['.jpg', '.jpeg', '.png', '.webp']}
+              acceptedFormats={['.jpg', '.jpeg', '.png', '.webp', '.svg', '.mp4', '.webm', '.mov', '.ogg']}
               multiple={true}
-              buttonLabel="Choose Batch Images"
-              maxSizeMB={20}
+              buttonLabel="Choose Batch Files"
+              maxSizeMB={50}
             />
             <p style={{ textAlign: 'center', fontSize: 11, color: '#9898B5', marginTop: 12 }}>
-              Upload up to 500 catalog photos. PNG, JPEG, WebP supported.
+              Upload up to 500 catalog items. PNG, JPEG, WebP, SVG and video files (MP4, WebM, MOV, OGG) supported.
             </p>
           </div>
         ) : (
@@ -885,7 +978,7 @@ export default function GenerateMetadataPage() {
                 <div>
                   <h3 style={{ fontSize: 15, fontWeight: 800, color: '#111128', margin: 0 }}>Batch Operations</h3>
                   <p style={{ fontSize: 12, color: '#9898B5', margin: '2px 0 0' }}>
-                    Processed {progress} of {files.length} images ({progressPercent}%)
+                    Processed {progress} of {files.length} files ({progressPercent}%)
                   </p>
                 </div>
                 
@@ -968,9 +1061,9 @@ export default function GenerateMetadataPage() {
             {/* Split Workspace Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5" style={{ alignItems: 'start' }}>
               
-              {/* Left Column: List of 500 Images (Sidebar) */}
+              {/* Left Column: List of 500 Files (Sidebar) */}
               <div className="lg:col-span-3" style={{ background: '#fff', border: '1px solid #E4E4EF', borderRadius: 20, padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 600, overflowY: 'auto' }}>
-                <div style={{ display: 'flex', justifyContext: 'space-between', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F1F7', paddingBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F1F7', paddingBottom: 8 }}>
                   <h4 style={{ fontSize: 10, fontWeight: 800, color: '#9898B5', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
                     Uploads ({files.length})
                   </h4>
@@ -980,7 +1073,7 @@ export default function GenerateMetadataPage() {
                       const input = document.createElement('input');
                       input.type = 'file';
                       input.multiple = true;
-                      input.accept = 'image/jpeg,image/jpg,image/png,image/webp';
+                      input.accept = 'image/jpeg,image/jpg,image/png,image/webp,image/svg+xml,video/mp4,video/webm,video/quicktime,video/ogg';
                       input.onchange = (e) => {
                         const loaded = Array.from(e.target.files);
                         handleFileSelect(loaded);
@@ -1029,7 +1122,11 @@ export default function GenerateMetadataPage() {
                             style={{ width: 34, height: 34, borderRadius: 6, objectFit: 'cover', border: '1px solid #E4E4EF', flexShrink: 0 }} 
                           />
                         ) : (
-                          <div style={{ width: 34, height: 34, borderRadius: 6, background: '#F7F7FB', border: '1px solid #E4E4EF', flexShrink: 0 }} />
+                          <div style={{ width: 34, height: 34, borderRadius: 6, background: '#F7F7FB', border: '1px solid #E4E4EF', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="18" height="18" fill="none" stroke="#6B6B8A" viewBox="0 0 24 24" strokeWidth="2.2">
+                              <path d="M23 7a2 2 0 0 0-2-2h-4v10a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V7zM1 7a2 2 0 0 1 2-2h4v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7z" />
+                            </svg>
+                          </div>
                         )}
 
                         <div style={{ minWidth: 0, flex: 1 }}>
@@ -1040,6 +1137,7 @@ export default function GenerateMetadataPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                             <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor }} />
                             <span style={{ fontSize: 9, fontWeight: 600, color: statusColor }}>{statusLabel}</span>
+                            {f.isVideo && <span style={{ background: '#7342E615', color: '#7342E6', fontSize: 8, padding: '1px 4px', borderRadius: 4, fontWeight: 800 }}>Video</span>}
                           </div>
                         </div>
 
@@ -1087,6 +1185,7 @@ export default function GenerateMetadataPage() {
                       
                       <div style={{ position: 'absolute', bottom: 10, left: 10, background: 'rgba(17,17,40,0.7)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 10, padding: '3px 8px', borderRadius: 6, fontWeight: 500 }}>
                         {selectedFile.name} · {formatSize(selectedFile.size)}
+                        {selectedFile.isVideo && " · Video Frame"}
                       </div>
                     </div>
 
@@ -1233,7 +1332,7 @@ export default function GenerateMetadataPage() {
                       <circle cx="8.5" cy="8.5" r="1.5" />
                       <path d="M21 15l-5-5L5 21" />
                     </svg>
-                    <p style={{ fontSize: 12, fontWeight: 600 }}>Select an image from the sidebar to inspect or edit</p>
+                    <p style={{ fontSize: 12, fontWeight: 600 }}>Select a file from the sidebar to inspect or edit</p>
                   </div>
                 )}
               </div>
