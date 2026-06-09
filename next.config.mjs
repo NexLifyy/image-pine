@@ -6,7 +6,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  transpilePackages: ['@imgly/background-removal', 'onnxruntime-web'],
   webpack: (config) => {
     config.module.rules.push({
       test: /\.mjs$/,
