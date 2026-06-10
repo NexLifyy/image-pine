@@ -44,23 +44,21 @@ export default function Footer() {
       targetLang = manualLang;
       setSelectedLanguage(targetLang);
       
-      // Sync cookie if necessary
+      // Sync cookie if necessary, but DO NOT reload the page
       const currentCookie = getCookie('googtrans');
       const expectedCookieValue = `/en/${targetLang}`;
       if (!currentCookie || decodeURIComponent(currentCookie) !== expectedCookieValue) {
         setTranslationCookie(targetLang);
-        window.location.reload();
       }
     } else if (sessionDetectedLang && supported.includes(sessionDetectedLang)) {
       targetLang = sessionDetectedLang;
       setSelectedLanguage(targetLang);
 
-      // Sync cookie if necessary
+      // Sync cookie if necessary, but DO NOT reload the page
       const currentCookie = getCookie('googtrans');
       const expectedCookieValue = `/en/${targetLang}`;
       if (!currentCookie || decodeURIComponent(currentCookie) !== expectedCookieValue) {
         setTranslationCookie(targetLang);
-        window.location.reload();
       }
     } else {
       // Auto-detect language
