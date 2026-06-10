@@ -5,6 +5,8 @@ import { useDropzone } from 'react-dropzone';
 import { saveAs } from 'file-saver';
 import { saveHistory } from '@/lib/storage';
 import { getMimeForSaveFormat, getExtensionForMime, compressCanvasToBlob } from '@/lib/imageUtils';
+import { useLanguage } from '@/lib/LanguageContext';
+
 
 /* ─── InputField — defined OUTSIDE Home to prevent remount on every render ── */
 function InputField({ value, onChange, type = 'text', placeholder, inputMode = 'numeric', pattern = '[0-9]*' }) {
@@ -203,9 +205,11 @@ function InlineSlider({ beforeSrc, afterSrc, beforeLabel, afterLabel, saving }) 
 }
 
 export default function Home() {
+  const { t } = useLanguage();
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const prevPreviewsRef = useRef([]);
+
 
   useEffect(() => {
     const cur = files.map(f => f.preview).filter(Boolean);
@@ -486,7 +490,7 @@ export default function Home() {
               </svg>
             </div>
             {isDragActive ? (
-              <p style={{fontSize:16,fontWeight:700,color:'#5B5BD6',margin:0}}>Drop your images here</p>
+              <p style={{fontSize:16,fontWeight:700,color:'#5B5BD6',margin:0}}>{t('Drag & drop files here')}</p>
             ) : (
               <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
                 <button type="button" onClick={e=>{e.stopPropagation();open();}} style={{
@@ -496,9 +500,9 @@ export default function Home() {
                 }}
                 onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.boxShadow='0 6px 24px rgba(91,91,214,0.45)';}}
                 onMouseLeave={e=>{e.currentTarget.style.transform='';e.currentTarget.style.boxShadow='0 4px 16px rgba(91,91,214,0.35)';}}>
-                  Choose Images
+                  {t('Select Files')}
                 </button>
-                <p style={{fontSize:13,color:'#9898B5',fontWeight:500,margin:0}}>or drag &amp; drop here</p>
+                <p style={{fontSize:13,color:'#9898B5',fontWeight:500,margin:0}}>{t('or click to select')}</p>
               </div>
             )}
             <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center'}}>
@@ -510,8 +514,8 @@ export default function Home() {
           </div>
 
           <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap',marginTop:28}}>
-            {['Resize','Compress','Rotate','Flip','Before/After Slider'].map(f=>(
-              <div key={f} style={{background:'#fff',border:'1px solid #E4E4EF',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:600,color:'#6B6B8A'}}>{f}</div>
+            {['Resize','Compress','Rotate Image','Flip Image'].map(f=>(
+              <div key={f} style={{background:'#fff',border:'1px solid #E4E4EF',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:600,color:'#6B6B8A'}}>{t(f)}</div>
             ))}
           </div>
         </section>
@@ -805,9 +809,9 @@ export default function Home() {
       <section style={{borderTop:'1px solid #E4E4EF',background:'#fff',padding:'72px 24px'}}>
         <div style={{maxWidth:1060,margin:'0 auto'}}>
           <div style={{textAlign:'center',marginBottom:48}}>
-            <span style={{display:'inline-block',background:'#EDEDFB',color:'#5B5BD6',fontSize:11,fontWeight:700,padding:'4px 14px',borderRadius:99,letterSpacing:'0.05em',textTransform:'uppercase',marginBottom:14,border:'1px solid #D8D8F5'}}>Why ImagePine</span>
-            <h2 style={{fontSize:'clamp(22px,4vw,34px)',fontWeight:900,color:'#111128',letterSpacing:'-0.03em',margin:'0 0 10px'}}>Everything you need, nothing you don't</h2>
-            <p style={{fontSize:15,color:'#6B6B8A',fontWeight:400,maxWidth:460,margin:'0 auto'}}>A complete image toolkit built for speed, simplicity, and privacy.</p>
+            <span style={{display:'inline-block',background:'#EDEDFB',color:'#5B5BD6',fontSize:11,fontWeight:700,padding:'4px 14px',borderRadius:99,letterSpacing:'0.05em',textTransform:'uppercase',marginBottom:14,border:'1px solid #D8D8F5'}}>{t('100% Free')}</span>
+            <h2 style={{fontSize:'clamp(22px,4vw,34px)',fontWeight:900,color:'#111128',letterSpacing:'-0.03em',margin:'0 0 10px'}}>{t('Why Choose This Tool?')}</h2>
+            <p style={{fontSize:15,color:'#6B6B8A',fontWeight:400,maxWidth:460,margin:'0 auto'}}>{t('Built for speed, quality and complete privacy.')}</p>
           </div>
           <div className="features-grid" style={{gap:18}}>
             {[
@@ -832,8 +836,8 @@ export default function Home() {
       <section style={{padding:'72px 24px',background:'#F7F7FB'}}>
         <div style={{maxWidth:860,margin:'0 auto'}}>
           <div style={{textAlign:'center',marginBottom:48}}>
-            <span style={{display:'inline-block',background:'#EDEDFB',color:'#5B5BD6',fontSize:11,fontWeight:700,padding:'4px 14px',borderRadius:99,letterSpacing:'0.05em',textTransform:'uppercase',marginBottom:14,border:'1px solid #D8D8F5'}}>How it works</span>
-            <h2 style={{fontSize:'clamp(22px,4vw,34px)',fontWeight:900,color:'#111128',letterSpacing:'-0.03em',margin:'0 0 10px'}}>Three steps to a perfect image</h2>
+            <span style={{display:'inline-block',background:'#EDEDFB',color:'#5B5BD6',fontSize:11,fontWeight:700,padding:'4px 14px',borderRadius:99,letterSpacing:'0.05em',textTransform:'uppercase',marginBottom:14,border:'1px solid #D8D8F5'}}>{t('How It Works')}</span>
+            <h2 style={{fontSize:'clamp(22px,4vw,34px)',fontWeight:900,color:'#111128',letterSpacing:'-0.03em',margin:'0 0 10px'}}>{t('How It Works')}</h2>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16}}>
             {[
@@ -855,15 +859,15 @@ export default function Home() {
       <section style={{borderTop:'1px solid #E4E4EF',background:'#fff',padding:'72px 24px'}}>
         <div style={{maxWidth:680,margin:'0 auto'}}>
           <div style={{textAlign:'center',marginBottom:48}}>
-            <span style={{display:'inline-block',background:'#EDEDFB',color:'#5B5BD6',fontSize:11,fontWeight:700,padding:'4px 14px',borderRadius:99,letterSpacing:'0.05em',textTransform:'uppercase',marginBottom:14,border:'1px solid #D8D8F5'}}>FAQ</span>
-            <h2 style={{fontSize:'clamp(22px,4vw,34px)',fontWeight:900,color:'#111128',letterSpacing:'-0.03em',margin:'0 0 10px'}}>Common questions</h2>
+            <span style={{display:'inline-block',background:'#EDEDFB',color:'#5B5BD6',fontSize:11,fontWeight:700,padding:'4px 14px',borderRadius:99,letterSpacing:'0.05em',textTransform:'uppercase',marginBottom:14,border:'1px solid #D8D8F5'}}>{t('Frequently Asked Questions')}</span>
+            <h2 style={{fontSize:'clamp(22px,4vw,34px)',fontWeight:900,color:'#111128',letterSpacing:'-0.03em',margin:'0 0 10px'}}>{t('Frequently Asked Questions')}</h2>
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:10}}>
             {faqs.map((faq,i)=>(
               <div key={i} style={{border:'1px solid #E4E4EF',borderRadius:12,overflow:'hidden',background:openFaqIndex===i?'#FAFAFE':'#fff',transition:'background 0.2s'}}>
                 <button type="button" onClick={()=>setOpenFaqIndex(openFaqIndex===i?null:i)}
                   style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'16px 18px',background:'none',border:'none',cursor:'pointer',textAlign:'left',gap:12}}>
-                  <span style={{fontSize:14,fontWeight:700,color:'#111128'}}>{faq.q}</span>
+                  <span style={{fontSize:14,fontWeight:700,color:'#111128'}}>{t(faq.q)}</span>
                   <svg width="16" height="16" fill="none" stroke="#9898B5" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round"
                     style={{flexShrink:0,transform:openFaqIndex===i?'rotate(180deg)':'none',transition:'transform 0.2s'}}>
                     <path d="M19 9l-7 7-7-7"/>
@@ -871,7 +875,7 @@ export default function Home() {
                 </button>
                 {openFaqIndex===i&&(
                   <div style={{padding:'0 18px 16px',fontSize:13,color:'#6B6B8A',lineHeight:1.7,fontWeight:400}} className="animate-fade-in">
-                    {faq.a}
+                    {t(faq.a)}
                   </div>
                 )}
               </div>

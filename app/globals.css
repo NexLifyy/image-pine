@@ -473,58 +473,15 @@ select { -webkit-appearance: none; appearance: none; cursor: pointer; }
 }
 
 /* ==========================================================================
-   Google Translate Styling Overrides (Hides widgets & prevents flash of English)
+   Native Translation Styling Overrides (Prevents flash of English)
    ========================================================================== */
 
 /* While translation is active, hide the body to prevent a flash of English */
-html.translation-active body {
+html.lang-loading body {
   opacity: 0 !important;
-}
-
-/* Reveal the body smoothly once the translated classes are added by Google Translate */
-html.translation-active.translated-ltr body,
-html.translation-active.translated-rtl body {
-  opacity: 1 !important;
-  transition: opacity 0.15s ease-in-out !important;
-}
-
-/* Hide all translation iframe bars, gadget simple buttons, spin overlays, and hover tooltips */
-#goog-gt-tt, 
-.goog-gt-tt, 
-.goog-te-banner-frame, 
-.goog-te-banner-frame.skiptranslate,
-.goog-te-banner, 
-.goog-te-balloon-frame,
-.goog-tooltip, 
-.goog-tooltip:hover,
-.goog-text-highlight,
-#google_translate_element,
-.goog-te-gadget,
-.goog-te-gadget-icon,
-.goog-te-gadget-simple,
-.goog-logo-link,
-.goog-te-menu-value,
-.goog-te-menu-frame,
-iframe.skiptranslate,
-iframe.translation-iframe,
-.goog-te-spinner-pos,
-.goog-te-spinner,
-.goog-te-spinner-animation {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  height: 0 !important;
-  width: 0 !important;
 }
 
 body {
-  top: 0px !important;
-  position: static !important;
-}
-
-font {
-  background-color: transparent !important;
-  box-shadow: none !important;
+  transition: opacity 0.15s ease-in-out;
 }
 

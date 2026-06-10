@@ -2,8 +2,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { routeMap, navbarSections as sections } from '@/lib/routes';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function Navbar() {
+  const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openSection, setOpenSection] = useState(null);
   const mobileRef = useRef(null);
@@ -71,7 +73,7 @@ export default function Navbar() {
                 }}
                 className="group-hover:text-[#111128] group-hover:bg-[#F7F7FB]"
               >
-                {section.title}
+                {t(section.title)}
                 <svg style={{ width: 12, height: 12, transition: 'transform 0.2s ease' }} className="group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -111,7 +113,7 @@ export default function Navbar() {
                       }}
                       className="hover:bg-[#F7F7FB] hover:text-[#111128]"
                     >
-                      {item}
+                      {t(item)}
                     </a>
                   );
                 })}
@@ -148,7 +150,7 @@ export default function Navbar() {
               e.currentTarget.style.color = '#4E4E6D';
             }}
           >
-            Contact Us
+            {t('Contact Us')}
           </a>
           <a
             href="https://buymeacoffee.com/imagepine"
@@ -184,7 +186,7 @@ export default function Navbar() {
               <line x1="10" y1="2" x2="10" y2="4" />
               <line x1="14" y1="2" x2="14" y2="4" />
             </svg>
-            Buy Us a Coffee
+            {t('Buy Us a Coffee')}
           </a>
         </div>
 
@@ -237,7 +239,7 @@ export default function Navbar() {
                   letterSpacing: '0.02em', textTransform: 'uppercase',
                 }}
               >
-                {section.title}
+                {t(section.title)}
                 <svg
                   style={{ width: 13, height: 13, color: '#9898B5', transition: 'transform 0.2s', transform: openSection === key ? 'rotate(180deg)' : 'none' }}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -263,7 +265,7 @@ export default function Navbar() {
                         }}
                         className="hover:bg-[#F7F7FB] hover:text-[#111128]"
                       >
-                        {item}
+                        {t(item)}
                       </a>
                     );
                   })}
@@ -288,7 +290,7 @@ export default function Navbar() {
                 textDecoration: 'none',
               }}
             >
-              Contact Us
+              {t('Contact Us')}
             </a>
             <a
               href="https://buymeacoffee.com/imagepine"
@@ -316,7 +318,7 @@ export default function Navbar() {
                 <line x1="10" y1="2" x2="10" y2="4" />
                 <line x1="14" y1="2" x2="14" y2="4" />
               </svg>
-              Buy Us a Coffee
+              {t('Buy Us a Coffee')}
             </a>
           </div>
         </div>

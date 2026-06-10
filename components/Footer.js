@@ -2,184 +2,12 @@
 
 import React from 'react';
 import { routeMap, footerColumns as columns } from '@/lib/routes';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function Footer() {
   const getHref = (item) => routeMap[item] || '#';
+  const { language, changeLanguage, t } = useLanguage();
 
-  const [selectedLanguage, setSelectedLanguage] = React.useState('en');
-
-  React.useEffect(() => {
-    // Helper to get cookie value
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
-
-    const setTranslationCookie = (lang) => {
-      const cookieValue = `/en/${lang}`;
-      document.cookie = `googtrans=${cookieValue}; path=/;`;
-      if (typeof window !== 'undefined') {
-        const hostname = window.location.hostname;
-        const domainParts = hostname.split('.');
-        if (domainParts.length > 2) {
-          // If it's a subdomain (e.g. www.imagepine.com), set it on the root domain .imagepine.com
-          const rootDomain = `.${domainParts.slice(-2).join('.')}`;
-          document.cookie = `googtrans=${cookieValue}; path=/; domain=${rootDomain};`;
-        }
-      }
-    };
-
-    const supported = ['en', 'es', 'fr', 'de', 'it', 'pt', 'bn', 'si', 'nl', 'ja', 'zh-CN', 'ko', 'sv', 'tr', 'id', 'pl'];
-    
-    // Check if the user has a manually saved language preference
-    const manualLang = localStorage.getItem('imagepine_lang_manual');
-    // Check if we already detected the language for this session
-    const sessionDetectedLang = sessionStorage.getItem('imagepine_lang_detected');
-
-    let targetLang = 'en';
-
-    if (manualLang && supported.includes(manualLang)) {
-      targetLang = manualLang;
-      setSelectedLanguage(targetLang);
-      
-      // Sync cookie if necessary, but DO NOT reload the page
-      const currentCookie = getCookie('googtrans');
-      const expectedCookieValue = `/en/${targetLang}`;
-      if (!currentCookie || decodeURIComponent(currentCookie) !== expectedCookieValue) {
-        setTranslationCookie(targetLang);
-      }
-    } else if (sessionDetectedLang && supported.includes(sessionDetectedLang)) {
-      targetLang = sessionDetectedLang;
-      setSelectedLanguage(targetLang);
-
-      // Sync cookie if necessary, but DO NOT reload the page
-      const currentCookie = getCookie('googtrans');
-      const expectedCookieValue = `/en/${targetLang}`;
-      if (!currentCookie || decodeURIComponent(currentCookie) !== expectedCookieValue) {
-        setTranslationCookie(targetLang);
-      }
-    } else {
-      // Auto-detect language
-      const autoDetect = async () => {
-        let detected = 'en';
-        try {
-          // 1. Try IP-based detection first
-          const res = await fetch('https://ipapi.co/json/');
-          const data = await res.json();
-          // ipapi returns languages like "en-US,es-US,ca,es-MX" or "en"
-          if (data.languages) {
-            const ipLangs = data.languages.split(',');
-            for (let lang of ipLangs) {
-              const code = lang.split('-')[0].toLowerCase();
-              let checkCode = code;
-              if (code === 'zh') {
-                checkCode = 'zh-CN';
-              }
-              if (supported.includes(checkCode)) {
-                detected = checkCode;
-                break;
-              }
-            }
-          }
-          
-          // 2. If IP fails, check browser navigator language
-          if (detected === 'en' && navigator.language) {
-            const browserCode = navigator.language.split('-')[0].toLowerCase();
-            let checkCode = browserCode;
-            if (browserCode === 'zh') {
-              checkCode = 'zh-CN';
-            }
-            if (supported.includes(checkCode)) {
-              detected = checkCode;
-            }
-          }
-        } catch (err) {
-          // 3. Fallback to browser language
-          if (navigator.language) {
-            const browserCode = navigator.language.split('-')[0].toLowerCase();
-            let checkCode = browserCode;
-            if (browserCode === 'zh') {
-              checkCode = 'zh-CN';
-            }
-            if (supported.includes(checkCode)) {
-              detected = checkCode;
-            }
-          }
-        }
-
-        // Cache the auto-detected result for this session
-        sessionStorage.setItem('imagepine_lang_detected', detected);
-        setSelectedLanguage(detected);
-
-        // Apply cookie and refresh if language is not English
-        if (detected !== 'en') {
-          setTranslationCookie(detected);
-          window.location.reload();
-        } else {
-          // If default English, clear cookie if one was set
-          const currentCookie = getCookie('googtrans');
-          if (currentCookie && decodeURIComponent(currentCookie) !== '/en/en') {
-            setTranslationCookie('en');
-            window.location.reload();
-          }
-        }
-      };
-
-      autoDetect();
-    }
-
-    // Load Google Translate Element script if not already present
-    if (!window.googleTranslateElementInit) {
-      window.googleTranslateElementInit = () => {
-        new window.google.translate.TranslateElement({
-          pageLanguage: 'en',
-          includedLanguages: 'en,es,fr,de,it,pt,bn,si,nl,ja,zh-CN,ko,sv,tr,id,pl',
-          layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
-          autoDisplay: false
-        }, 'google_translate_element');
-      };
-
-      const addScript = () => {
-        const s = document.createElement('script');
-        s.type = 'text/javascript';
-        s.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-        document.body.appendChild(s);
-      };
-
-      if (!document.getElementById('google_translate_element')) {
-        const div = document.createElement('div');
-        div.id = 'google_translate_element';
-        div.style.display = 'none';
-        document.body.appendChild(div);
-      }
-
-      addScript();
-    }
-  }, []);
-
-  const handleLanguageChange = (e) => {
-    const lang = e.target.value;
-    setSelectedLanguage(lang);
-    
-    // Save to localStorage as a manual override
-    localStorage.setItem('imagepine_lang_manual', lang);
-    
-    // Set cookie
-    const cookieValue = `/en/${lang}`;
-    document.cookie = `googtrans=${cookieValue}; path=/;`;
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
-      const domainParts = hostname.split('.');
-      if (domainParts.length > 2) {
-        const rootDomain = `.${domainParts.slice(-2).join('.')}`;
-        document.cookie = `googtrans=${cookieValue}; path=/; domain=${rootDomain};`;
-      }
-      // Force reload to apply immediately
-      window.location.reload();
-    }
-  };
 
   return (
     <footer style={{
@@ -207,7 +35,7 @@ export default function Footer() {
               </span>
             </a>
             <p style={{ fontSize: 12, color: '#9898B5', lineHeight: 1.65, marginBottom: 16, fontWeight: 500, maxWidth: 200 }}>
-              Free, fast, and private image tools. Everything runs in your browser.
+              {t('Free, fast, and private image tools. Everything runs in your browser.')}
             </p>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -217,7 +45,7 @@ export default function Footer() {
               letterSpacing: '0.04em',
             }}>
               <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="3" /></svg>
-              100% Free
+              {t('100% Free')}
             </div>
           </div>
 
@@ -229,7 +57,7 @@ export default function Footer() {
                 letterSpacing: '0.08em', textTransform: 'uppercase',
                 marginBottom: 14,
               }}>
-                {col.title}
+                {t(col.title)}
               </h4>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {col.items.map((item) => {
@@ -246,7 +74,7 @@ export default function Footer() {
                         }}
                         className="hover:text-[#111128]"
                       >
-                        {item}
+                        {t(item)}
                       </a>
                     </li>
                   );
@@ -257,19 +85,12 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div style={{
+        <div className="flex flex-col lg:flex-row items-center lg:justify-between gap-5" style={{
           borderTop: '1px solid #F1F1F7',
           paddingTop: 20,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 10,
         }}>
-          <p style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, margin: 0 }}>
-            © {new Date().getFullYear()} ImagePine. All rights reserved.
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          {/* Language and links wrapper */}
+          <div className="flex flex-col lg:flex-row items-center gap-4 lg:gap-6 order-1 lg:order-2">
             {/* Language Selector */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <svg width="14" height="14" fill="none" stroke="#9898B5" viewBox="0 0 24 24" strokeWidth="2" style={{ flexShrink: 0 }}>
@@ -278,8 +99,8 @@ export default function Footer() {
                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
               </svg>
               <select
-                value={selectedLanguage}
-                onChange={handleLanguageChange}
+                value={language}
+                onChange={(e) => changeLanguage(e.target.value)}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -313,50 +134,19 @@ export default function Footer() {
               </select>
             </div>
 
-            <span style={{ color: '#E4E4EF', fontSize: 11, display: 'inline-block' }}>|</span>
+            <span style={{ color: '#E4E4EF', fontSize: 11 }} className="hidden lg:inline-block">|</span>
 
-            <a href="/contact" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, textDecoration: 'none', transition: 'color 0.15s' }} className="hover:text-[#111128]">Contact Us</a>
-            <a href="/privacy" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, textDecoration: 'none', transition: 'color 0.15s' }} className="hover:text-[#111128]">Privacy Policy</a>
-            <a href="/terms" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, textDecoration: 'none', transition: 'color 0.15s' }} className="hover:text-[#111128]">Terms of Service</a>
+            <div className="flex items-center gap-4 flex-wrap justify-center">
+              <a href="/contact" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, textDecoration: 'none', transition: 'color 0.15s' }} className="hover:text-[#111128]">{t('Contact Us')}</a>
+              <a href="/privacy" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, textDecoration: 'none', transition: 'color 0.15s' }} className="hover:text-[#111128]">{t('Privacy Policy')}</a>
+              <a href="/terms" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, textDecoration: 'none', transition: 'color 0.15s' }} className="hover:text-[#111128]">{t('Terms of Service')}</a>
+            </div>
           </div>
 
-          {/* Clean Google Translate styles overrides */}
-          <style dangerouslySetInnerHTML={{__html: `
-            /* Hide Google Translate Top Banner and Widget elements */
-            #goog-gt-tt, 
-            .goog-gt-tt, 
-            .goog-te-banner-frame, 
-            .goog-te-banner-frame.skiptranslate,
-            .goog-te-banner, 
-            .goog-te-balloon-frame,
-            .goog-tooltip, 
-            .goog-tooltip:hover,
-            .goog-text-highlight,
-            #google_translate_element,
-            .goog-te-gadget,
-            .goog-te-gadget-icon,
-            .goog-te-gadget-simple,
-            .goog-logo-link,
-            .goog-te-menu-value,
-            .goog-te-menu-frame,
-            iframe.skiptranslate,
-            iframe.translation-iframe {
-              display: none !important;
-              visibility: hidden !important;
-              opacity: 0 !important;
-              pointer-events: none !important;
-              height: 0 !important;
-              width: 0 !important;
-            }
-            body {
-              top: 0px !important;
-              position: static !important;
-            }
-            font {
-              background-color: transparent !important;
-              box-shadow: none !important;
-            }
-          `}} />
+          {/* Copyright line */}
+          <p className="order-2 lg:order-1" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, margin: 0 }}>
+            © {new Date().getFullYear()} ImagePine. {t('All rights reserved.')}
+          </p>
         </div>
       </div>
     </footer>

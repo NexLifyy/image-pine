@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import { useLanguage } from '@/lib/LanguageContext';
 
 /**
  * ToolPageShell - shared premium layout for all tool pages.
@@ -24,6 +25,7 @@ export default function ToolPageShell({
   children,
   accent = '#5B5BD6',
 }) {
+  const { t } = useLanguage();
   const [openFaq, setOpenFaq] = useState(null);
 
   const accentLight = accent + '18';
@@ -40,7 +42,7 @@ export default function ToolPageShell({
           letterSpacing: '-0.04em', lineHeight: 1.1,
           margin: '0 0 12px',
         }}>
-          {title}
+          {t(title)}
         </h1>
         {subtitle && (
           <p style={{
@@ -48,7 +50,7 @@ export default function ToolPageShell({
             fontWeight: 400, lineHeight: 1.6,
             maxWidth: 540, margin: '0 auto 0',
           }}>
-            {subtitle}
+            {t(subtitle)}
           </p>
         )}
       </section>
@@ -67,10 +69,10 @@ export default function ToolPageShell({
                 fontSize: 'clamp(20px,3.5vw,30px)', fontWeight: 900,
                 color: '#111128', letterSpacing: '-0.03em', margin: '0 0 8px',
               }}>
-                Why Choose This Tool?
+                {t('Why Choose This Tool?')}
               </h2>
               <p style={{ fontSize: 14, color: '#9898B5', fontWeight: 400, margin: 0 }}>
-                Built for speed, quality and complete privacy.
+                {t('Built for speed, quality and complete privacy.')}
               </p>
             </div>
             <div className="features-grid" style={{ gap: 16 }}>
@@ -101,8 +103,8 @@ export default function ToolPageShell({
                   }}>
                     {icon}
                   </div>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111128', margin: 0 }}>{ftitle}</h3>
-                  <p style={{ fontSize: 12, color: '#9898B5', lineHeight: 1.65, margin: 0 }}>{desc}</p>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111128', margin: 0 }}>{t(ftitle)}</h3>
+                  <p style={{ fontSize: 12, color: '#9898B5', lineHeight: 1.65, margin: 0 }}>{t(desc)}</p>
                 </div>
               ))}
             </div>
@@ -119,10 +121,10 @@ export default function ToolPageShell({
                 fontSize: 'clamp(20px,3.5vw,30px)', fontWeight: 900,
                 color: '#111128', letterSpacing: '-0.03em', margin: '0 0 8px',
               }}>
-                How It Works
+                {t('How It Works')}
               </h2>
               <p style={{ fontSize: 14, color: '#9898B5', fontWeight: 400, margin: 0 }}>
-                Simple steps to get your result.
+                {t('Simple steps to get your result.')}
               </p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 28 }}>
@@ -136,8 +138,8 @@ export default function ToolPageShell({
                     boxShadow: `0 4px 12px ${accentLight}`,
                     letterSpacing: '-0.03em',
                   }}>{n}</div>
-                  <h4 style={{ fontSize: 14, fontWeight: 700, color: '#111128', margin: 0 }}>{stitle}</h4>
-                  <p style={{ fontSize: 12, color: '#9898B5', fontWeight: 400, lineHeight: 1.6, margin: 0 }}>{desc}</p>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: '#111128', margin: 0 }}>{t(stitle)}</h4>
+                  <p style={{ fontSize: 12, color: '#9898B5', fontWeight: 400, lineHeight: 1.6, margin: 0 }}>{t(desc)}</p>
                 </div>
               ))}
             </div>
@@ -154,10 +156,10 @@ export default function ToolPageShell({
                 fontSize: 'clamp(20px,3.5vw,30px)', fontWeight: 900,
                 color: '#111128', letterSpacing: '-0.03em', margin: '0 0 8px',
               }}>
-                Frequently Asked Questions
+                {t('Frequently Asked Questions')}
               </h2>
               <p style={{ fontSize: 14, color: '#9898B5', fontWeight: 400, margin: 0 }}>
-                Quick answers to common questions.
+                {t('Quick answers to common questions.')}
               </p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -176,7 +178,7 @@ export default function ToolPageShell({
                       background: 'none', border: 'none', cursor: 'pointer', gap: 14, textAlign: 'left',
                     }}
                   >
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111128' }}>{faq.q}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111128' }}>{t(faq.q)}</span>
                     <div style={{
                       width: 22, height: 22,
                       background: openFaq === idx ? accentLight : '#F7F7FB',
@@ -191,7 +193,7 @@ export default function ToolPageShell({
                   </button>
                   {openFaq === idx && (
                     <div style={{ padding: '0 18px 16px', borderTop: '1px solid #F1F1F7' }}>
-                      <p style={{ fontSize: 12, color: '#6B6B8A', lineHeight: 1.7, margin: '10px 0 0' }}>{faq.a}</p>
+                      <p style={{ fontSize: 12, color: '#6B6B8A', lineHeight: 1.7, margin: '10px 0 0' }}>{t(faq.a)}</p>
                     </div>
                   )}
                 </div>
@@ -205,7 +207,7 @@ export default function ToolPageShell({
       {seoText && (
         <section style={{ background: '#F7F7FB', borderTop: '1px solid #E4E4EF', padding: '48px 24px' }}>
           <div style={{ maxWidth: 780, margin: '0 auto' }}>
-            <p style={{ fontSize: 13, color: '#9898B5', lineHeight: 1.8, fontWeight: 400, margin: 0 }}>{seoText}</p>
+            <p style={{ fontSize: 13, color: '#9898B5', lineHeight: 1.8, fontWeight: 400, margin: 0 }}>{t(seoText)}</p>
           </div>
         </section>
       )}

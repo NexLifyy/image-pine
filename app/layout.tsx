@@ -4,6 +4,7 @@ import Script from "next/script";
 import Navbar from "@/components/Navbar";
 import PrivacyBanner from "@/components/PrivacyBanner";
 import Footer from "@/components/Footer";
+import { LanguageProvider } from "@/lib/LanguageContext";
 import "./globals.css";
 
 const inter = Inter({
@@ -32,20 +33,17 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                var getCookie = function(name) {
-                  var value = "; " + document.cookie;
-                  var parts = value.split("; " + name + "=");
-                  if (parts.length === 2) return parts.pop().split(";").shift();
-                  return null;
-                };
-                var googtrans = getCookie("googtrans");
-                if (googtrans && googtrans !== "/en/en" && googtrans !== "/en/") {
-                  document.documentElement.classList.add("translation-active");
-                  // Fallback timeout: show body after 1.5s if translation fails to load
-                  setTimeout(function() {
-                    document.documentElement.classList.remove("translation-active");
-                  }, 1500);
-                }
+                try {
+                  var manual = localStorage.getItem('imagepine_lang_manual');
+                  var detected = sessionStorage.getItem('imagepine_lang_detected');
+                  var lang = manual || detected;
+                  if (lang && lang !== 'en') {
+                    document.documentElement.classList.add("lang-loading");
+                    setTimeout(function() {
+                      document.documentElement.classList.remove("lang-loading");
+                    }, 1200);
+                  }
+                } catch (e) {}
               })();
             `,
           }}
@@ -74,11 +72,14 @@ export default function RootLayout({
           background: "#F7F7FB",
         }}
       >
-        <Navbar />
-        <PrivacyBanner />
-        <main style={{ flex: 1 }}>{children}</main>
-        <Footer />
+        <LanguageProvider>
+          <Navbar />
+          <PrivacyBanner />
+          <main style={{ flex: 1 }}>{children}</main>
+          <Footer />
+        </LanguageProvider>
       </body>
     </html>
   );
 }
+
