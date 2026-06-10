@@ -19,7 +19,6 @@ export default function Footer() {
 
     const setTranslationCookie = (lang) => {
       const cookieValue = `/en/${lang}`;
-      // Set cookie for root path and domain to be visible across all subpages
       document.cookie = `googtrans=${cookieValue}; path=/;`;
       if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
@@ -33,18 +32,36 @@ export default function Footer() {
     };
 
     const supported = ['en', 'es', 'fr', 'de', 'it', 'pt', 'bn', 'si', 'nl', 'ja', 'zh-CN', 'ko', 'sv', 'tr', 'id', 'pl'];
-    const googtrans = getCookie('googtrans');
-    let initialLang = 'en';
+    
+    // Check if the user has a manually saved language preference
+    const manualLang = localStorage.getItem('imagepine_lang_manual');
+    // Check if we already detected the language for this session
+    const sessionDetectedLang = sessionStorage.getItem('imagepine_lang_detected');
 
-    if (googtrans) {
-      const parts = googtrans.split('/');
-      if (parts.length >= 3) {
-        const parsedLang = parts[2];
-        if (supported.includes(parsedLang)) {
-          initialLang = parsedLang;
-        }
+    let targetLang = 'en';
+
+    if (manualLang && supported.includes(manualLang)) {
+      targetLang = manualLang;
+      setSelectedLanguage(targetLang);
+      
+      // Sync cookie if necessary
+      const currentCookie = getCookie('googtrans');
+      const expectedCookieValue = `/en/${targetLang}`;
+      if (!currentCookie || decodeURIComponent(currentCookie) !== expectedCookieValue) {
+        setTranslationCookie(targetLang);
+        window.location.reload();
       }
-      setSelectedLanguage(initialLang);
+    } else if (sessionDetectedLang && supported.includes(sessionDetectedLang)) {
+      targetLang = sessionDetectedLang;
+      setSelectedLanguage(targetLang);
+
+      // Sync cookie if necessary
+      const currentCookie = getCookie('googtrans');
+      const expectedCookieValue = `/en/${targetLang}`;
+      if (!currentCookie || decodeURIComponent(currentCookie) !== expectedCookieValue) {
+        setTranslationCookie(targetLang);
+        window.location.reload();
+      }
     } else {
       // Auto-detect language
       const autoDetect = async () => {
@@ -69,7 +86,7 @@ export default function Footer() {
             }
           }
           
-          // 2. If IP fails to find a supported language, check browser navigator language
+          // 2. If IP fails, check browser navigator language
           if (detected === 'en' && navigator.language) {
             const browserCode = navigator.language.split('-')[0].toLowerCase();
             let checkCode = browserCode;
@@ -81,7 +98,7 @@ export default function Footer() {
             }
           }
         } catch (err) {
-          // 3. Fallback directly to browser language on fetch failure
+          // 3. Fallback to browser language
           if (navigator.language) {
             const browserCode = navigator.language.split('-')[0].toLowerCase();
             let checkCode = browserCode;
@@ -94,11 +111,21 @@ export default function Footer() {
           }
         }
 
-        // Default to English if detected is not in supported list (handled by supported.includes checks above)
+        // Cache the auto-detected result for this session
+        sessionStorage.setItem('imagepine_lang_detected', detected);
+        setSelectedLanguage(detected);
+
+        // Apply cookie and refresh if language is not English
         if (detected !== 'en') {
-          setSelectedLanguage(detected);
           setTranslationCookie(detected);
           window.location.reload();
+        } else {
+          // If default English, clear cookie if one was set
+          const currentCookie = getCookie('googtrans');
+          if (currentCookie && decodeURIComponent(currentCookie) !== '/en/en') {
+            setTranslationCookie('en');
+            window.location.reload();
+          }
         }
       };
 
@@ -137,6 +164,9 @@ export default function Footer() {
   const handleLanguageChange = (e) => {
     const lang = e.target.value;
     setSelectedLanguage(lang);
+    
+    // Save to localStorage as a manual override
+    localStorage.setItem('imagepine_lang_manual', lang);
     
     // Set cookie
     const cookieValue = `/en/${lang}`;
@@ -294,31 +324,39 @@ export default function Footer() {
 
           {/* Clean Google Translate styles overrides */}
           <style dangerouslySetInnerHTML={{__html: `
+            /* Hide Google Translate Top Banner and Widget elements */
+            #goog-gt-tt, 
+            .goog-gt-tt, 
+            .goog-te-banner-frame, 
             .goog-te-banner-frame.skiptranslate,
-            .goog-te-banner-frame,
-            .goog-te-banner {
+            .goog-te-banner, 
+            .goog-te-balloon-frame,
+            .goog-tooltip, 
+            .goog-tooltip:hover,
+            .goog-text-highlight,
+            #google_translate_element,
+            .goog-te-gadget,
+            .goog-te-gadget-icon,
+            .goog-te-gadget-simple,
+            .goog-logo-link,
+            .goog-te-menu-value,
+            .goog-te-menu-frame,
+            iframe.skiptranslate,
+            iframe.translation-iframe {
               display: none !important;
+              visibility: hidden !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
+              height: 0 !important;
+              width: 0 !important;
             }
             body {
               top: 0px !important;
+              position: static !important;
             }
-            .goog-tooltip {
-              display: none !important;
-            }
-            .goog-tooltip:hover {
-              display: none !important;
-            }
-            .goog-text-highlight {
+            font {
               background-color: transparent !important;
-              border: none !important;
               box-shadow: none !important;
-            }
-            iframe.skiptranslate {
-              display: none !important;
-              visibility: hidden !important;
-            }
-            #google_translate_element {
-              display: none !important;
             }
           `}} />
         </div>
