@@ -164,9 +164,51 @@ const _FAQS = [
   { q: 'Can I edit the generated titles and keywords before exporting?', a: 'Yes. Simply click any file in the sidebar to load it in the middle panel, where you can modify the title and keywords. The changes save instantly and will be reflected in the final CSV.' }
 ];
 
+const enforceDescLength = (desc, targetLength, keywords) => {
+  let refinedDesc = desc.trim();
+  if (refinedDesc.length === targetLength) {
+    return refinedDesc;
+  }
+  
+  if (refinedDesc.length > targetLength) {
+    // Truncate cleanly at a space
+    let truncated = refinedDesc.substring(0, targetLength);
+    const lastSpace = truncated.lastIndexOf(' ');
+    if (lastSpace > targetLength / 2) {
+      truncated = truncated.substring(0, lastSpace);
+    }
+    // Pad to exact length with dots
+    while (truncated.length < targetLength) {
+      truncated += '.';
+    }
+    return truncated;
+  }
+  
+  // If shorter, append keywords
+  let separator = ' - ';
+  let kwList = [...(keywords || [])];
+  
+  // If we don't have enough keywords, repeat them to ensure we can pad
+  if (kwList.length > 0) {
+    while (refinedDesc.length + separator.length + kwList[0].length < targetLength) {
+      const kw = kwList.shift();
+      refinedDesc += separator + kw;
+      separator = ', ';
+      kwList.push(kw); // put it back at the end to cycle
+    }
+  }
+  
+  // If still shorter by a small margin, pad with dots to reach exact targetLength
+  while (refinedDesc.length < targetLength) {
+    refinedDesc += '.';
+  }
+  
+  return refinedDesc;
+};
+
 // Helper to construct Groq API Prompt
 const buildPrompt = (settings) => {
-  const { titleLength, keywordFormat, keywordLength, includeKeywords, excludeKeywords } = settings;
+  const { titleLength, descriptionLength, keywordFormat, keywordLength, includeKeywords, excludeKeywords } = settings;
 
   let formatDesc = "Auto-mixture (could be single words or short phrases)";
   if (keywordFormat === 'Single') {
@@ -176,13 +218,14 @@ const buildPrompt = (settings) => {
   }
 
   let prompt = `Analyze this image and generate SEO-optimized metadata.
-Return a JSON object containing exactly three keys: "title", "keywords", and "category".
+Return a JSON object containing exactly four keys: "title", "description", "keywords", and "category".
 
 Constraints:
 1. "title": A descriptive, search-friendly title. The title MUST be EXACTLY ${titleLength} characters in total length (including spaces). Count the characters carefully and adjust the wording so the total character count of the title string is exactly ${titleLength}.
-2. "keywords": An array of descriptive keywords/tags. It MUST contain exactly ${keywordLength} keywords. You must output exactly ${keywordLength} items in the "keywords" array, no more and no less. Count them carefully to ensure there are exactly ${keywordLength} strings.
-3. Keyword format: Each keyword in the array must be in the format: ${formatDesc}.
-4. "category": An integer between 1 and 21 representing the best-matching category from the list below:
+2. "description": A detailed, SEO-friendly description of the image content. The description MUST be EXACTLY ${descriptionLength} characters in total length (including spaces). Count the characters carefully and adjust the wording so the total character count of the description string is exactly ${descriptionLength}.
+3. "keywords": An array of descriptive keywords/tags. It MUST contain exactly ${keywordLength} keywords. You must output exactly ${keywordLength} items in the "keywords" array, no more and no less. Count them carefully to ensure there are exactly ${keywordLength} strings.
+4. Keyword format: Each keyword in the array must be in the format: ${formatDesc}.
+5. "category": An integer between 1 and 21 representing the best-matching category from the list below:
    1 - Animals
    2 - Buildings and Architecture
    3 - Business
@@ -207,15 +250,16 @@ Constraints:
 `;
 
   if (includeKeywords.trim()) {
-    prompt += `5. Inclusion: You MUST include the following words/tags (or highly similar variants) in the keywords array: ${includeKeywords}.\n`;
+    prompt += `6. Inclusion: You MUST include the following words/tags (or highly similar variants) in the keywords array: ${includeKeywords}.\n`;
   }
   if (excludeKeywords.trim()) {
-    prompt += `6. Exclusion: You MUST NOT include any of the following words/tags (or variants) in the title or keywords array: ${excludeKeywords}.\n`;
+    prompt += `7. Exclusion: You MUST NOT include any of the following words/tags (or variants) in the title, description or keywords array: ${excludeKeywords}.\n`;
   }
 
   prompt += `\nResponse format MUST be a valid JSON object matching this schema exactly, with no additional markdown formatting outside the JSON block:
 {
   "title": "your title string here",
+  "description": "your description string here",
   "keywords": ["keyword1", "keyword2", ...],
   "category": 12
 }`;
@@ -467,10 +511,26 @@ export default function GenerateMetadataPage() {
 
   // Sliders and options
   const [titleLength, setTitleLength] = useState(150);
+  const [descriptionLength, setDescriptionLength] = useState(250);
   const [keywordFormat, setKeywordFormat] = useState('Auto');
   const [keywordLength, setKeywordLength] = useState(20);
   const [includeKeywords, setIncludeKeywords] = useState('');
   const [excludeKeywords, setExcludeKeywords] = useState('');
+
+  const dropdownRef = useRef(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Queue Generation State
   const [isGenerating, setIsGenerating] = useState(false);
@@ -698,6 +758,7 @@ export default function GenerateMetadataPage() {
 
     const settings = {
       titleLength,
+      descriptionLength,
       keywordFormat,
       keywordLength,
       includeKeywords,
@@ -718,6 +779,7 @@ export default function GenerateMetadataPage() {
         ...prev,
         [file.id]: {
           title: prev[file.id]?.title || '',
+          description: prev[file.id]?.description || '',
           keywords: prev[file.id]?.keywords || [],
           status: 'processing',
           error: ''
@@ -758,15 +820,18 @@ export default function GenerateMetadataPage() {
         const parsed = parseGrokResponse(content);
 
         const resTitle = parsed.title || '';
+        const resDesc = parsed.description || '';
         const resKeywords = Array.isArray(parsed.keywords) ? parsed.keywords : [];
         const resCategory = parsed.category ? parseInt(parsed.category, 10) : '';
 
         const exactTitle = enforceTitleLength(resTitle, titleLength, resKeywords);
+        const exactDesc = enforceDescLength(resDesc, descriptionLength, resKeywords);
 
         setMetadataMap(prev => ({
           ...prev,
           [file.id]: {
             title: exactTitle,
+            description: exactDesc,
             keywords: resKeywords,
             category: isNaN(resCategory) ? '' : resCategory,
             status: 'completed',
@@ -781,6 +846,7 @@ export default function GenerateMetadataPage() {
           ...prev,
           [file.id]: {
             title: prev[file.id]?.title || '',
+            description: prev[file.id]?.description || '',
             keywords: prev[file.id]?.keywords || [],
             status: 'failed',
             error: err.message || 'Processing failed'
@@ -810,6 +876,16 @@ export default function GenerateMetadataPage() {
       [fileId]: {
         ...(prev[fileId] || { keywords: [], status: 'pending', error: '', category: '' }),
         title: val
+      }
+    }));
+  };
+
+  const handleDescriptionChange = (fileId, val) => {
+    setMetadataMap(prev => ({
+      ...prev,
+      [fileId]: {
+        ...(prev[fileId] || { keywords: [], status: 'pending', error: '', category: '' }),
+        description: val
       }
     }));
   };
@@ -864,36 +940,117 @@ export default function GenerateMetadataPage() {
     }));
   };
 
-  const downloadCsv = () => {
+  const downloadPlatformCsv = (platform) => {
     if (files.length === 0) {
       showToast("No data available to export.", "error");
       return;
     }
 
-    const headers = ['Filename', 'Title', 'Keywords', 'Category'];
+    let headers = [];
+    let delimiter = ',';
+    let filename = `metadata_${platform.toLowerCase().replace(/\s+/g, '_')}.csv`;
+
+    const mapToShutterstockCategory = (catId) => {
+      const mapping = {
+        1: 'Animals/Wildlife',
+        2: 'Buildings/Landmarks',
+        3: 'Business/Finance',
+        4: 'Food and Drink',
+        5: 'Nature',
+        6: 'Miscellaneous',
+        7: 'Food and Drink',
+        8: 'Backgrounds/Textures',
+        9: 'Sports/Recreation',
+        10: 'Industrial',
+        11: 'Nature',
+        12: 'People',
+        13: 'People',
+        14: 'Nature',
+        15: 'Religion',
+        16: 'Science',
+        17: 'Miscellaneous',
+        18: 'Sports/Recreation',
+        19: 'Technology',
+        20: 'Transportation',
+        21: 'Transportation'
+      };
+      return mapping[catId] || '';
+    };
+
+    const escapeCsv = (str) => {
+      return `"${String(str || '').replace(/"/g, '""')}"`;
+    };
+
+    if (platform === 'Adobe Stock') {
+      headers = ['Filename', 'Title', 'Keywords', 'Category'];
+    } else if (platform === 'Shutterstock') {
+      headers = ['Filename', 'Description', 'Keywords', 'Categories'];
+    } else if (platform === 'Vecteezy') {
+      headers = ['Filename', 'Title', 'Description', 'Keywords'];
+    } else if (platform === '123RF') {
+      headers = ['Filename', 'Title', 'Description', 'Keywords'];
+    } else if (platform === 'Freepik') {
+      headers = ['File name', 'Title', 'Keywords', 'if generated with AI - Prompt', 'Model'];
+      delimiter = ';';
+    } else if (platform === 'Depositphotos') {
+      headers = ['Filename', 'Title', 'Description', 'Keywords'];
+    } else if (platform === 'iStock') {
+      headers = ['file name', 'title', 'description', 'keywords'];
+    }
+
     const rows = files.map(f => {
       const meta = metadataMap[f.id] || {};
       const title = meta.title || '';
+      const description = meta.description || meta.title || '';
       const kws = Array.isArray(meta.keywords) ? meta.keywords.join(', ') : '';
       const category = meta.category || '';
 
-      const escapeCsv = (str) => {
-        return `"${String(str).replace(/"/g, '""')}"`;
-      };
-
-      return [
-        escapeCsv(f.name),
-        escapeCsv(title),
-        escapeCsv(kws),
-        escapeCsv(category)
-      ].join(',');
+      if (platform === 'Adobe Stock') {
+        const cleanTitle = title.substring(0, 70);
+        return [
+          escapeCsv(f.name),
+          escapeCsv(cleanTitle),
+          escapeCsv(kws),
+          escapeCsv(category)
+        ].join(delimiter);
+      } else if (platform === 'Shutterstock') {
+        const catText = mapToShutterstockCategory(category);
+        return [
+          escapeCsv(f.name),
+          escapeCsv(description),
+          escapeCsv(kws),
+          escapeCsv(catText)
+        ].join(delimiter);
+      } else if (platform === 'Vecteezy' || platform === '123RF' || platform === 'Depositphotos') {
+        return [
+          escapeCsv(f.name),
+          escapeCsv(title),
+          escapeCsv(description),
+          escapeCsv(kws)
+        ].join(delimiter);
+      } else if (platform === 'Freepik') {
+        return [
+          escapeCsv(f.name),
+          escapeCsv(title),
+          escapeCsv(kws),
+          escapeCsv(''),
+          escapeCsv('meta-llama/llama-4-scout-17b-16e-instruct')
+        ].join(delimiter);
+      } else if (platform === 'iStock') {
+        return [
+          escapeCsv(f.name),
+          escapeCsv(title),
+          escapeCsv(description),
+          escapeCsv(kws)
+        ].join(delimiter);
+      }
     });
 
-    const csvContent = [headers.join(','), ...rows].join('\n');
+    const csvContent = [headers.join(delimiter), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, 'generated_image_metadata.csv');
+    saveAs(blob, filename);
     
-    saveHistory('Generate Metadata', `Exported CSV metadata for ${files.length} files`);
+    saveHistory('Generate Metadata', `Exported CSV metadata for ${files.length} files (${platform})`);
   };
 
   const formatSize = (bytes) => {
@@ -903,7 +1060,7 @@ export default function GenerateMetadataPage() {
   };
 
   // State elements derived
-  const selectedMeta = selectedFile ? metadataMap[selectedFile.id] || { title: '', keywords: [], category: '', status: 'pending', error: '' } : null;
+  const selectedMeta = selectedFile ? metadataMap[selectedFile.id] || { title: '', description: '', keywords: [], category: '', status: 'pending', error: '' } : null;
   const progressPercent = files.length > 0 ? Math.round((progress / files.length) * 100) : 0;
   const numConfiguredKeys = apiKeys.filter(k => k.trim() !== '').length;
 
@@ -1145,21 +1302,94 @@ export default function GenerateMetadataPage() {
                     </button>
                   )}
                   
-                  <button
-                    type="button"
-                    onClick={downloadCsv}
-                    disabled={isGenerating}
-                    style={{
-                      background: '#fff', color: '#4E4E6D', fontWeight: 700, fontSize: 12,
-                      padding: '8px 18px', borderRadius: 10, border: '1px solid #D1D1E4', cursor: isGenerating ? 'not-allowed' : 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 6, opacity: isGenerating ? 0.5 : 1
-                    }}
+                  <div 
+                    ref={dropdownRef} 
+                    style={{ position: 'relative', display: 'inline-block' }}
+                    onMouseEnter={() => !isGenerating && setShowDropdown(true)}
+                    onMouseLeave={() => setShowDropdown(false)}
                   >
-                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                    </svg>
-                    Download CSV
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => !isGenerating && setShowDropdown(!showDropdown)}
+                      disabled={isGenerating}
+                      style={{
+                        background: '#fff', color: '#4E4E6D', fontWeight: 700, fontSize: 12,
+                        padding: '8px 18px', borderRadius: 10, border: '1px solid #D1D1E4', cursor: isGenerating ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 6, opacity: isGenerating ? 0.5 : 1
+                      }}
+                    >
+                      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                      </svg>
+                      Download CSV
+                      <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3" style={{ marginLeft: 2, transform: showDropdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {showDropdown && (
+                      <div 
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          right: 0,
+                          marginTop: 6,
+                          background: '#fff',
+                          border: '1px solid #E4E4EF',
+                          borderRadius: 12,
+                          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                          zIndex: 1000,
+                          minWidth: 160,
+                          padding: '6px 0',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 2,
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {[
+                          'Adobe Stock',
+                          'Shutterstock',
+                          'Vecteezy',
+                          '123RF',
+                          'Freepik',
+                          'Depositphotos',
+                          'iStock'
+                        ].map((plat) => (
+                          <button
+                            key={plat}
+                            type="button"
+                            onClick={() => {
+                              downloadPlatformCsv(plat);
+                              setShowDropdown(false);
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#111128',
+                              padding: '8px 16px',
+                              textAlign: 'left',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              width: '100%',
+                              transition: 'all 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#7342E608';
+                              e.currentTarget.style.color = '#7342E6';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'none';
+                              e.currentTarget.style.color = '#111128';
+                            }}
+                          >
+                            {plat}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   <button
                     type="button"
@@ -1345,6 +1575,29 @@ export default function GenerateMetadataPage() {
                         />
                       </div>
 
+                      {/* Description Box */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label style={{ fontSize: 11, fontWeight: 800, color: '#4E4E6D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Description</label>
+                          <span style={{ fontSize: 10, color: (selectedMeta.description?.length > descriptionLength) ? '#EF4444' : '#9898B5', fontWeight: 600 }}>
+                            {selectedMeta.description?.length || 0} / {descriptionLength} ch
+                          </span>
+                        </div>
+                        <textarea
+                          rows="3"
+                          value={selectedMeta.description || ''}
+                          onChange={(e) => handleDescriptionChange(selectedFile.id, e.target.value)}
+                          placeholder={selectedMeta.status === 'processing' ? 'Generating description...' : 'Metadata Description'}
+                          disabled={selectedMeta.status === 'processing'}
+                          style={{
+                            width: '100%', padding: '9px 12px',
+                            background: '#F7F7FB', border: '1px solid #E4E4EF',
+                            borderRadius: 9, fontSize: 13, fontWeight: 600,
+                            color: '#111128', outline: 'none', resize: 'vertical'
+                          }}
+                        />
+                      </div>
+
                       {/* Category Box */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                         <label style={{ fontSize: 11, fontWeight: 800, color: '#4E4E6D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Category</label>
@@ -1460,6 +1713,22 @@ export default function GenerateMetadataPage() {
                       max="200" 
                       value={titleLength} 
                       onChange={(e) => setTitleLength(parseInt(e.target.value, 10))} 
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+
+                  {/* Description Constraint Slider */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: '#6B6B8A' }}>Adjust Description Length</label>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: '#7342E6' }}>{descriptionLength} ch</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="10" 
+                      max="300" 
+                      value={descriptionLength} 
+                      onChange={(e) => setDescriptionLength(parseInt(e.target.value, 10))} 
                       style={{ width: '100%' }}
                     />
                   </div>
