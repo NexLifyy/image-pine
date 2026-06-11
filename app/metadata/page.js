@@ -88,7 +88,7 @@ export default function MetadataPage() {
         </svg>
       ),
       title: '100% Private & Secure',
-      desc: 'All metadata parsing and binary cleaning is processed securely. We never store or log your uploaded photos.'
+      desc: 'All processing happens entirely in your browser. Your images never leave your device.'
     },
     {
       icon: (
@@ -151,7 +151,7 @@ export default function MetadataPage() {
     { q: 'What metadata streams are stored inside photos?', a: 'Exchangeable Image File Format (EXIF) lists camera settings and GPS. Extensible Metadata Platform (XMP) holds editor histories and cataloging. IPTC stores copyrights and captions. COM is plain-text comments.' },
     { q: 'Does stripping metadata reduce image quality?', a: 'No. Our utility operates directly on the image file segments, removing headers like APP1 and APP13 without touching or re-compressing the actual image bytes. Quality remains 100% identical.' },
     { q: 'Why should I strip metadata before sharing?', a: 'Photos shot on smartphones default to storing highly precise GPS coordinates, serial numbers, camera specifications, and software versions. Sharing these online exposes your private details.' },
-    { q: 'Is my data secure on ImagePine?', a: 'Absolutely. Your photos are sent to our secure API for metadata extraction and stripping. We process everything in-memory or in temporary files that are deleted immediately after your request completes. No images are saved, and your data remains 100% private.' }
+    { q: 'Is my data secure on ImagePine?', a: 'Absolutely. ImagePine processes everything directly in your browser. Your images never leave your device. There is no server involved at any point. We have zero access to your files. Your data is 100% private, guaranteed.' }
   ];
 
   const handleFileSelect = (newFiles) => {
