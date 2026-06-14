@@ -345,7 +345,6 @@ export default function WatermarkPage() {
             type, text, fontFamily, fontSize, color, opacity, rotation, bold, italic, tile,
             logoScale, logoOpacity, logoRotation, position, customX, customY
           };
-          drawWatermark(canvas, ctx, img, logoImg, settings);
 
           const mimeMap = {
             'Original': fileObj.type,
@@ -354,6 +353,13 @@ export default function WatermarkPage() {
             'WebP': 'image/webp'
           };
           const mime = mimeMap[saveFormat] || fileObj.type;
+
+          if (mime === 'image/jpeg') {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+
+          drawWatermark(canvas, ctx, img, logoImg, settings);
           canvas.toBlob(blob => {
             if (blob) {
               const extMap = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };

@@ -222,6 +222,10 @@ export default function ResizeJpgPage() {
           throw new Error('Canvas 2D context not available.');
         }
 
+        // Fill white background for JPEG
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, targetWidth, targetHeight);
+
         // Draw image onto canvas
         ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 

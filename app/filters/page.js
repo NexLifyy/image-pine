@@ -148,10 +148,6 @@ export default function FiltersPage() {
         const ctx = canvas.getContext('2d');
         if (!ctx) throw new Error('Could not get 2D canvas context');
 
-        // Apply filters directly to canvas context
-        ctx.filter = getFilterString();
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
         const mimeMap = {
           'Original': file.type,
           'JPG': 'image/jpeg',
@@ -159,6 +155,15 @@ export default function FiltersPage() {
           'WebP': 'image/webp'
         };
         const mime = mimeMap[saveFormat] || file.type;
+
+        if (mime === 'image/jpeg') {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Apply filters directly to canvas context
+        ctx.filter = getFilterString();
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const quality = 0.92;
 
         canvas.toBlob((blob) => {

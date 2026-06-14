@@ -116,6 +116,13 @@ export default function FlipPage() {
           throw new Error('Canvas 2D context not available.');
         }
 
+        // Fill white background for JPEG
+        const mime = file.type || 'image/jpeg';
+        if (mime === 'image/jpeg') {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, width, height);
+        }
+
         // Apply flip transformations:
         // Translate context origin to flip axis before scaling by -1
         ctx.translate(flipH ? width : 0, flipV ? height : 0);

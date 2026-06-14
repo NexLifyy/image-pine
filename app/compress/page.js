@@ -74,23 +74,70 @@ export default function CompressPage() {
     const img = new Image();
     img.onload = async () => {
       try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        const targetBytes = targetSize * 1024;
-        // Binary search for target size
-        let lo = 0.05, hi = 1.0, bestBlob = null;
-        for (let i = 0; i < 12; i++) {
-          const mid = (lo + hi) / 2;
-          const blob = await new Promise(res => canvas.toBlob(res, format, mid));
-          if (!blob) break;
-          if (blob.size <= targetBytes) { lo = mid; bestBlob = blob; }
-          else hi = mid;
-          if (hi - lo < 0.01) break;
+        let bestBlob = null;
+        if (format === 'image/png') {
+          // PNG Compression (by scaling dimensions since PNG canvas output is lossless)
+          let scale = quality / 100;
+          let attempts = 0;
+          const maxAttempts = 8;
+          const targetBytes = targetSize * 1024;
+
+          while (attempts < maxAttempts && active) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+            tempCanvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+            const tempCtx = tempCanvas.getContext('2d');
+            if (tempCtx) {
+              tempCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
+            }
+            const blob = await new Promise(res => tempCanvas.toBlob(res, 'image/png'));
+            if (!blob) break;
+
+            bestBlob = blob;
+            // If we fit target size, we stop.
+            if (blob.size <= targetBytes) {
+              break;
+            }
+            // If targetSize is not the bottleneck (or we reached maximum scale down), we stop.
+            scale *= 0.8;
+            attempts++;
+          }
+          // Safeguard: if input is PNG, and output is PNG, and size increased, and quality was set to 100 (or close to it)
+          if (bestBlob && file.type === 'image/png' && bestBlob.size > file.size && quality >= 95) {
+            bestBlob = file;
+          }
+        } else {
+          // JPEG/WebP Compression (lossy via quality parameter)
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Canvas 2D context not available.');
+
+          // Fill white background for JPEG since it doesn't support transparency
+          if (format === 'image/jpeg') {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+
+          ctx.drawImage(img, 0, 0);
+
+          const targetBytes = targetSize * 1024;
+          // Binary search for quality to fit target size
+          let lo = 0.05, hi = 1.0;
+          for (let i = 0; i < 12; i++) {
+            const mid = (lo + hi) / 2;
+            const blob = await new Promise(res => canvas.toBlob(res, format, mid));
+            if (!blob) break;
+            if (blob.size <= targetBytes) { lo = mid; bestBlob = blob; }
+            else hi = mid;
+            if (hi - lo < 0.01) break;
+          }
+          // fallback to quality slider if binary search couldn't fit target
+          if (!bestBlob) {
+            bestBlob = await new Promise(res => canvas.toBlob(res, format, quality / 100));
+          }
         }
-        // fallback to quality slider
-        if (!bestBlob) bestBlob = await new Promise(res => canvas.toBlob(res, format, quality / 100));
+
         if (!bestBlob) throw new Error('Compression failed.');
         if (!active) return;
         if (compressedUrl) URL.revokeObjectURL(compressedUrl);

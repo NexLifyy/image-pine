@@ -114,6 +114,10 @@ export default function HeicToJpgPage() {
                 throw new Error('Canvas 2D context not available.');
               }
 
+              // Fill white background for JPEG
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillRect(0, 0, w, h);
+
               ctx.drawImage(img, 0, 0, w, h);
               canvas.toBlob((resizedBlob) => {
                 URL.revokeObjectURL(tempUrl);

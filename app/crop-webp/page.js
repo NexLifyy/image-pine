@@ -689,7 +689,7 @@ export default function CropWebpPage() {
                       ) : (
                         <>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 2v14a2 2 0 002 2h14M18 22V8a2 2 0 00-2-2H2" />
                           </svg>
                           Crop Selected Area
                         </>

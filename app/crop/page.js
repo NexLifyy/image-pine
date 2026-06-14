@@ -390,6 +390,13 @@ export default function CropPage() {
           throw new Error('Canvas 2D context not available.');
         }
 
+        // Fill white background for JPEG exports if source has transparency
+        const mime = file.type || 'image/jpeg';
+        if (mime === 'image/jpeg') {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, sourceWidth, sourceHeight);
+        }
+
         // Draw cropped section onto canvas
         ctx.drawImage(
           img,
@@ -679,7 +686,7 @@ export default function CropPage() {
                       ) : (
                         <>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 2v14a2 2 0 002 2h14M18 22V8a2 2 0 00-2-2H2" />
                           </svg>
                           Crop Selected Area
                         </>
