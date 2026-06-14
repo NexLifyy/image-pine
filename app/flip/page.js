@@ -21,9 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Can I flip both axes?', a: 'Yes - apply both flips simultaneously.' },
-  { q: 'Does flipping reduce quality?', a: 'No. The Canvas flip transform is lossless.' },
-  { q: 'Are images uploaded?', a: 'Never. Everything runs in your browser.' }
+  {
+    q: "What is the difference between horizontal and vertical flipping?",
+    a: "Flipping horizontally mirrors the image from left to right (like looking in a mirror). Flipping vertically mirrors the image from top to bottom (like an upside-down reflection)."
+  },
+  {
+    q: "Can I flip an image both horizontally and vertically at the same time?",
+    a: "Yes. You can toggle both 'Flip Horizontal' and 'Flip Vertical' switches to mirror the image on both axes simultaneously."
+  },
+  {
+    q: "Does flipping an image reduce its quality or resolution?",
+    a: "No. Flipping simply reverses the coordinate directions of the pixels. The canvas transform is completely lossless and preserves the exact original resolution."
+  },
+  {
+    q: "What happens to transparent backgrounds when I flip an image?",
+    a: "For PNG and WebP formats, transparency is fully preserved. For JPEG formats, transparent areas will automatically be filled with a solid white background."
+  },
+  {
+    q: "Are my images uploaded to a server for flipping?",
+    a: "No. The flip operation runs 100% locally in your web browser, ensuring complete privacy."
+  },
+  {
+    q: "What file formats does the flip tool support?",
+    a: "You can upload JPEG, PNG, WebP, BMP, and SVG files, and download the flipped result as JPEG, PNG, or WebP."
+  }
 ];
 
 export default function FlipPage() {

@@ -22,10 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'How many photos can I add?', a: 'Up to the number of cells in your chosen grid layout (2–4 images).' },
-  { q: 'What layouts are available?', a: '1x2, 2x1, 2x2, 1x3, and 3x1 grid arrangements.' },
-  { q: 'Can I customize borders?', a: 'Yes - adjust gap size from 0 to 50px and choose any fill color.' },
-  { q: 'Are files uploaded?', a: 'No. The collage is drawn on a local HTML5 Canvas. Nothing leaves your device.' },
+  {
+    q: "How many photos can I add to a single collage?",
+    a: "You can add up to the number of cells in your chosen grid template, which ranges from 2 to 4 images depending on the layout."
+  },
+  {
+    q: "What layout templates are available for the collage?",
+    a: "We support multiple standard arrangements, including 1x2, 2x1, 2x2 grid configurations, and 1x3 or 3x1 sequential filmstrips."
+  },
+  {
+    q: "Can I customize the border gap and background color?",
+    a: "Yes. You can adjust the gap width between photos from 0px to 50px, and select any background color to fill the borders using our built-in color picker."
+  },
+  {
+    q: "Are my photos uploaded to a server to generate the collage?",
+    a: "No. All collage rendering is executed client-side in your browser using an HTML5 Canvas. Your private photos never leave your device."
+  },
+  {
+    q: "Can I drag and drop images to swap their positions?",
+    a: "Currently, images are placed sequentially in the grid cells in the order they are uploaded. To swap positions, you can clear a slot and re-upload the desired image."
+  },
+  {
+    q: "Does making a collage reduce the resolution of my original photos?",
+    a: "No. The output collage is generated on a high-resolution canvas to keep individual details sharp, exporting as a high-quality JPEG matching your combined dimensions."
+  }
 ];
 
 export default function CollagePage() {

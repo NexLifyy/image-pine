@@ -148,10 +148,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Where do I find my Groq API key?', a: 'You can create and manage API keys by signing up on the Groq Console (console.groq.com/keys). You can utilize their high-speed vision models.' },
-  { q: 'How does the fallback key rotation work?', a: 'Groq API keys have rate limits. By providing up to 3 keys, if the generator hits an HTTP 429 (Too Many Requests) error, it will immediately rotate to the next key and retry, keeping your large batch runs running smoothly.' },
-  { q: 'Are my files stored on Groq?', a: 'No, Groq does not store your files permanently; they are processed temporarily for metadata inference. Image Pine downscales image frames locally before uploading to conserve your bandwidth and API limits.' },
-  { q: 'Can I edit the generated titles and keywords before exporting?', a: 'Yes. Simply click any file in the sidebar to load it in the middle panel, where you can modify the title and keywords. The changes save instantly and will be reflected in the final CSV.' }
+  {
+    q: "Where do I find my Groq API key?",
+    a: "You can create and manage API keys by signing up on the Groq Console (console.groq.com/keys). You can utilize their high-speed vision models."
+  },
+  {
+    q: "How does the fallback key rotation work?",
+    a: "Groq API keys have rate limits. By providing up to 3 keys, if the generator hits an HTTP 429 (Too Many Requests) error, it will immediately rotate to the next key and retry, keeping your large batch runs running smoothly."
+  },
+  {
+    q: "Are my files stored on Groq?",
+    a: "No, Groq does not store your files permanently; they are processed temporarily for metadata inference. Image Pine downscales image frames locally before uploading to conserve your bandwidth and API limits."
+  },
+  {
+    q: "Can I edit the generated titles and keywords before exporting?",
+    a: "Yes. Simply click any file in the sidebar to load it in the middle panel, where you can modify the title and keywords. The changes save instantly and will be reflected in the final CSV."
+  },
+  {
+    q: "What AI model is used for image analysis?",
+    a: "The generator utilizes Groq's high-speed Llama-3-Vision models, which excel at visual recognition, optical character reading, and generating accurate stock photo descriptions."
+  },
+  {
+    q: "How do I import the output CSV file into stock photo websites?",
+    a: "The generated CSV conforms to standard metadata import templates used by major stock platforms like Adobe Stock, Shutterstock, and iStock, allowing you to upload and map files instantly."
+  }
 ];
 
 const enforceDescLength = (desc, targetLength, keywords) => {

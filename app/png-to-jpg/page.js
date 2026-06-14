@@ -22,9 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Is transparency preserved?', a: 'No - JPEG does not support transparency. Transparent areas become white.' },
-  { q: 'How small will the output be?', a: 'JPEG at 80% is typically 60-80% smaller than the same PNG.' },
-  { q: 'Are files uploaded?', a: 'No. All conversion is local.' }
+  {
+    q: "What happens to transparent backgrounds when converting PNG to JPG?",
+    a: "Since JPEG does not support transparency, all transparent areas in your PNG will be filled with a solid white background."
+  },
+  {
+    q: "Does converting PNG to JPG reduce the image quality?",
+    a: "PNG is lossless while JPG is lossy. You can adjust the quality slider to 95% or higher to minimize compression artifacts and keep details sharp."
+  },
+  {
+    q: "Can I set a target file size (e.g. under 100 KB) for the JPG output?",
+    a: "Yes. You can specify a target size limit in KB or MB, and the tool will automatically adjust quality to fit the target size."
+  },
+  {
+    q: "Are my PNG files uploaded to a server for JPG conversion?",
+    a: "No. The file parsing, transparency filling, and JPEG encoding are done entirely in your browser sandbox."
+  },
+  {
+    q: "Can I convert multiple PNGs to JPGs in one batch?",
+    a: "Yes. You can batch upload multiple PNGs and download them individually or inside a single .zip file."
+  },
+  {
+    q: "Can I resize the dimensions of my PNG during the conversion?",
+    a: "Yes. You can enter custom width/height values or use percentage scaling in the settings before converting."
+  }
 ];
 
 export default function PngToJpgPage() {

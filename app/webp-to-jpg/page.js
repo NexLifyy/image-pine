@@ -22,8 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Why convert WebP to JPG?', a: 'JPEG has wider compatibility with older software and email clients.' },
-  { q: 'Are files uploaded?', a: 'No. Everything runs in your browser.' }
+  {
+    q: "Will converting WebP to JPG affect the quality of my image?",
+    a: "Both WebP and JPG are lossy formats. While some compression artifacts can occur, setting the JPEG quality slider to 90% or higher keeps the output sharp and virtually identical to the original."
+  },
+  {
+    q: "What happens to transparency when converting WebP to JPG?",
+    a: "JPEG does not support transparent backgrounds. Any transparent areas in your WebP file will automatically be filled with a solid white background."
+  },
+  {
+    q: "Are my WebP files uploaded to a server?",
+    a: "No. The conversion runs entirely client-side in your browser using local canvas processing, protecting your privacy."
+  },
+  {
+    q: "Can I compress the output JPG file size?",
+    a: "Yes. You can adjust the Quality slider or specify a target file size (e.g. 50 KB) to optimize the output JPEG's size."
+  },
+  {
+    q: "Does this tool support animated WebP files?",
+    a: "This tool processes static WebP images. If you upload an animated WebP, it will extract and convert the first frame of the animation to a JPEG."
+  },
+  {
+    q: "Can I batch convert multiple files?",
+    a: "Yes. Upload multiple WebP files to process them in a queue, and download them individually or as a single .zip file."
+  }
 ];
 
 export default function WebpToJpgPage() {

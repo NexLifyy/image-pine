@@ -21,8 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Can I merge multiple JPGs?', a: 'Yes - each JPEG becomes one page in the PDF.' },
-  { q: 'Are files uploaded?', a: 'No. Everything runs in your browser.' }
+  {
+    q: "Is there any difference between JPG to PDF and general Image to PDF?",
+    a: "This tool is specifically optimized for JPG and JPEG photos, allowing you to convert and compile multiple camera files and image formats into a single document."
+  },
+  {
+    q: "Can I merge multiple JPG files into a single multi-page PDF?",
+    a: "Yes. Every JPG file you upload will become a separate page in the generated PDF, arranged in the sequence you specify."
+  },
+  {
+    q: "Does converting a JPG to PDF reduce its resolution or quality?",
+    a: "No. The converter wraps your JPG image inside a PDF page wrapper without re-compressing the image, ensuring that the original photo quality is preserved 100%."
+  },
+  {
+    q: "Can I rotate or reorder my JPG photos before compiling the PDF?",
+    a: "Yes. You can drag and drop thumbnails to change page order, and use the rotate buttons to fix orientation issues before generating the PDF."
+  },
+  {
+    q: "Are my photos uploaded to any server during the conversion?",
+    a: "No, never. The file parsing, orientation correction, and PDF compilation run entirely client-side in your web browser."
+  },
+  {
+    q: "Can I adjust page margins and page size layout settings?",
+    a: "Yes. You can choose to match the original image size, or fit to standard formats like A4 and US Letter with customizable page margin spacing."
+  }
 ];
 
 export default function JpgToPdfPage() {
@@ -34,25 +56,6 @@ export default function JpgToPdfPage() {
   const toggleFaq = (index) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
-
-  const faqs = [
-    {
-      q: "What is the difference between converting JPG and JPEG?",
-      a: "There is no functional difference; both JPG and JPEG represent the exact same image encoding and are handled identically by our converter."
-    },
-    {
-      q: "Are my images resized during compilation?",
-      a: "No, each image's native width and height are preserved exactly as a unique page size in the resulting PDF, ensuring maximum resolution clarity."
-    },
-    {
-      q: "Does this tool compress the source JPG files?",
-      a: "No, it wraps the JPEG streams directly into the PDF container without re-encoding them, which preserves original image quality perfectly."
-    },
-    {
-      q: "Is it secure to compile personal pictures?",
-      a: "Absolutely. All processing and PDF compilation run locally on your device within your web browser. No files are ever sent to our servers."
-    }
-  ];
 
   // Manage object URLs lifetime safely to prevent memory leaks and premature revocation
   const prevPreviewsRef = useRef([]);

@@ -22,8 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Will quality be preserved?', a: 'Yes. Bicubic resampling keeps sharpness.' },
-  { q: 'Are files uploaded?', a: 'No. All processing is local.' }
+  {
+    q: "Will resizing my JPG/JPEG image make it blurry?",
+    a: "The tool uses high-quality bicubic interpolation which blends pixels smoothly. While scaling up may introduce some soft edges, scaling down will keep your JPG sharp and clear."
+  },
+  {
+    q: "What happens to transparent areas if I upload a PNG to the JPG resizer?",
+    a: "Since the JPEG format does not support transparency, any transparent areas in your source image will automatically be filled with a clean white background."
+  },
+  {
+    q: "How do I control the quality and compression of the output JPG?",
+    a: "You can use the Quality slider (from 1% to 100%) to balance file size and visual details, or specify a target file size (e.g., 50 KB) to let the tool find the best quality value automatically."
+  },
+  {
+    q: "Are my JPG photographs uploaded to any server?",
+    a: "No. The entire compression and resizing process runs locally on your machine. Your photos are never sent to external servers."
+  },
+  {
+    q: "Can I resize JPGs by percentage instead of typing pixel dimensions?",
+    a: "Yes. You can switch the settings to Percentage mode and adjust the slider to scale your photo to 50%, 75%, or any custom proportion."
+  },
+  {
+    q: "Does this resizer keep the EXIF metadata of my JPEG photo?",
+    a: "To minimize file size and protect your privacy, default canvas exports strip camera EXIF metadata (like GPS location, camera settings, and date taken) from the resized JPEG."
+  }
 ];
 
 export default function ResizeJpgPage() {

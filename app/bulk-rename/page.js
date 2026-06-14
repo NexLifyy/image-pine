@@ -23,9 +23,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'How does the pattern template syntax work?', a: 'Type any name. You can use `#` or `[index]` as a placeholder for numbers. If omitted, the number is appended automatically (e.g. `photo_001.jpg`).' },
-  { q: 'Are file extensions preserved?', a: 'Yes. The extension of each file (.png, .jpg, .svg, etc.) is preserved automatically.' },
-  { q: 'Is there a limit to the number of files I can rename?', a: 'No, but zipping large batches of images (e.g. hundreds of megabytes) might take a few seconds depending on your device RAM.' }
+  {
+    q: "How does the pattern template syntax work?",
+    a: "Type any name. You can use `#` or `[index]` as a placeholder for numbers. If omitted, the number is appended automatically (e.g. `photo_001.jpg`)."
+  },
+  {
+    q: "Are file extensions preserved?",
+    a: "Yes. The extension of each file (.png, .jpg, .svg, etc.) is preserved automatically."
+  },
+  {
+    q: "Is there a limit to the number of files I can rename?",
+    a: "No, but zipping large batches of images (e.g. hundreds of megabytes) might take a few seconds depending on your device RAM."
+  },
+  {
+    q: "Are my files uploaded to a server to be renamed?",
+    a: "No. The renaming and ZIP compression are performed 100% locally in your web browser. No files are uploaded."
+  },
+  {
+    q: "Can I specify custom starting indices and padding formats?",
+    a: "Yes. You can choose any start index (e.g. 5) and set zero-padding width (e.g. 2 digits for `05`, 3 digits for `005`) in the settings."
+  },
+  {
+    q: "Can I preview the renamed file names before executing?",
+    a: "Yes. The workspace displays a side-by-side preview list comparing the original names with the new names, allowing you to audit everything before downloading."
+  }
 ];
 
 export default function BulkRenamePage() {

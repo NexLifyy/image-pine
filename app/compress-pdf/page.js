@@ -21,8 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Does this compress all PDF content?', a: 'It compresses embedded images which are typically largest.' },
-  { q: 'Are files uploaded?', a: 'No. Everything runs in your browser.' }
+  {
+    q: "What is the difference between Lossless and Raster (Strong) PDF compression?",
+    a: "Lossless compression removes duplicate structural metadata, unused streams, and optimizes structural objects while leaving text and image pixels untouched. Raster compression renders PDF pages into high-efficiency JPEG images to drastically reduce file sizes, though it will flatten text elements."
+  },
+  {
+    q: "Will my PDF's text remain selectable after compression?",
+    a: "Yes, if you choose 'Lossless' mode. In 'Raster' mode, pages are converted into images, meaning text is flattened and no longer selectable, which is ideal for reducing heavy photo-rich documents."
+  },
+  {
+    q: "How does the quality slider affect my compressed PDF?",
+    a: "The quality slider is only active in Raster mode. Setting it between 60% and 80% offers the best balance, significantly shrinking the file size while keeping text and images clear and legible."
+  },
+  {
+    q: "Are my files uploaded to a remote server for compression?",
+    a: "No. The compression algorithm is executed entirely in your browser using local client-side memory. Your private documents never leave your computer."
+  },
+  {
+    q: "Why didn't my PDF file shrink much in Lossless mode?",
+    a: "If your PDF is already optimized or consists mostly of vector shapes and plain text with no redundant metadata, there is little room for lossless compression. In such cases, switching to Raster mode will force a significant size reduction."
+  },
+  {
+    q: "Is there a limit on the file size I can upload for compression?",
+    a: "Since the compressor runs locally in browser memory, files under 100 MB are recommended to ensure smooth performance without causing browser tabs to reload."
+  }
 ];
 
 export default function CompressPdfPage() {
@@ -35,25 +57,6 @@ export default function CompressPdfPage() {
   const toggleFaq = (index) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
-
-  const faqs = [
-    {
-      q: "What is the difference between Lossless and Raster compression?",
-      a: "Lossless packing removes duplicate elements, metadata, and history from the file structure while leaving pages exactly as they are. Raster compression converts pages into high-efficiency JPEG images, reducing the file size significantly, though text will no longer be selectable."
-    },
-    {
-      q: "Does the quality slider affect Lossless compression?",
-      a: "No, quality and resolution sliders are only applicable in 'Raster (Strong)' mode."
-    },
-    {
-      q: "Is there a file size limit for PDF compression?",
-      a: "Our compressor runs client-side, so the limit is based on your browser's available memory. Usually, files up to 100MB compress smoothly."
-    },
-    {
-      q: "Are compressed files watermark-free?",
-      a: "Yes! All optimizations are 100% free with no watermarks or premium plans."
-    }
-  ];
 
   // Compression configuration states
   const [compressMode, setCompressMode] = useState('lossless'); // 'lossless' | 'lossy'

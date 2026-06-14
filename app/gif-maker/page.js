@@ -55,9 +55,30 @@ export default function GifMakerPage() {
   ];
 
   const _FAQS = [
-    { q: 'Is there a limit to the number of frames?', a: 'No strict limit. However, uploading dozens of extremely high-resolution images can consume significant memory and CPU power. For best results, resize your frames first.' },
-    { q: 'How does loop work?', a: 'If looping is checked, the animated GIF will repeat indefinitely. If unchecked, it will play once and stop on the last frame.' },
-    { q: 'How does quality affect compilation time?', a: 'High quality uses a sample interval of 2 (processes more pixels), creating sharp GIFs but taking longer. Low quality parses every 20th pixel, making it much faster but slightly noisier.' }
+    {
+      q: "Is there a limit to the number of frames?",
+      a: "No strict limit. However, uploading dozens of extremely high-resolution images can consume significant memory and CPU power. For best results, resize your frames first."
+    },
+    {
+      q: "How does loop work?",
+      a: "If looping is checked, the animated GIF will repeat indefinitely. If unchecked, it will play once and stop on the last frame."
+    },
+    {
+      q: "How does quality affect compilation time?",
+      a: "High quality uses a sample interval of 2 (processes more pixels), creating sharp GIFs but taking longer. Low quality parses every 20th pixel, making it much faster but slightly noisier."
+    },
+    {
+      q: "Are my source frames uploaded to a server to compile the GIF?",
+      a: "No, never. The animated GIF compilation runs 100% locally in your web browser using local memory and JavaScript workers."
+    },
+    {
+      q: "Can I customize the frame delay speed for my animation?",
+      a: "Yes. You can specify a custom delay time in milliseconds (e.g. 100ms per frame) to control the speed of the animation."
+    },
+    {
+      q: "Can I reorder the frames after uploading them?",
+      a: "Yes. You can drag and drop the image frame thumbnails in the workspace queue to reorder them before rendering the GIF."
+    }
   ];
 
   const handleFileSelect = (newFiles) => {

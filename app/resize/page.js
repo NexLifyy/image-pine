@@ -21,10 +21,30 @@ const _STEPS = [
   { n: '3', title: 'Download', desc: 'Click Resize and download your file.' },
 ];
 const _FAQS = [
-  { q: 'How does the resizer preserve quality?', a: 'Bicubic scaling inside HTML5 Canvas prevents pixelation.' },
-  { q: 'Can I resize by percentage?', a: 'Yes - toggle to percentage mode and slide from 1% to 200%.' },
-  { q: 'Are images sent to any server?', a: 'No. All processing is 100% client-side.' },
-  { q: 'What formats are supported?', a: 'JPEG, PNG, WebP, SVG as input. Export as JPEG, PNG, or WebP.' },
+  {
+    q: "How does the resizer preserve image quality?",
+    a: "It uses HTML5 Canvas's high-quality bicubic interpolation algorithms. When scaling down, this ensures pixels are blended smoothly to avoid jagged edges, and when scaling up, it minimizes blurriness."
+  },
+  {
+    q: "Can I resize images by a specific percentage instead of pixels?",
+    a: "Yes. You can switch the mode from Pixels to Percentage and use the slider or enter a custom value from 1% to 200% to scale the image proportionally."
+  },
+  {
+    q: "What image file formats does this resizer support?",
+    a: "You can upload JPEG, PNG, WebP, BMP, and SVG files. You can export the resized result as JPEG, PNG, or WebP."
+  },
+  {
+    q: "Can I target a specific file size (like under 100 KB) while resizing?",
+    a: "Yes, you can specify a target file size limit (in KB or MB) in the settings. The tool will automatically adjust the compression level to try to fit your desired size."
+  },
+  {
+    q: "Are my images uploaded to a server for resizing?",
+    a: "No, never. All resizing, canvas rendering, and processing are done 100% locally in your web browser. Your private image files never leave your device."
+  },
+  {
+    q: "How do I lock or unlock the aspect ratio?",
+    a: "Use the chain icon between the width and height inputs. When locked, changing the width automatically updates the height (and vice versa) to prevent your image from stretching."
+  }
 ];
 
 /* ─── helpers ──────────────────────────────────────────────────────────── */

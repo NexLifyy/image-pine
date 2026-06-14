@@ -22,9 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'How does the extraction algorithm work?', a: 'It draws the image onto a small canvas context, extracts pixel color samples, groups them using a color spacing threshold to filter out duplicates, and ranks them by visual frequency.' },
-  { q: 'Can I copy individual color values?', a: 'Yes. Simply click the HEX, RGB, or HSL code below any color swatch to copy it to your clipboard.' },
-  { q: 'What is the exported Palette Card?', a: 'It is a high-resolution PNG image containing a side-by-side view of your 6 colors, their hex codes, and clean labels for sharing.' }
+  {
+    q: "How does the extraction algorithm work?",
+    a: "It draws the image onto a small canvas context, extracts pixel color samples, groups them using a color spacing threshold to filter out duplicates, and ranks them by visual frequency."
+  },
+  {
+    q: "Can I copy individual color values?",
+    a: "Yes. Simply click the HEX, RGB, or HSL code below any color swatch to copy it to your clipboard."
+  },
+  {
+    q: "What is the exported Palette Card?",
+    a: "It is a high-resolution PNG image containing a side-by-side view of your 6 colors, their hex codes, and clean labels for sharing."
+  },
+  {
+    q: "Are my private pictures uploaded to a server for color extraction?",
+    a: "No. The color extraction algorithm parses the pixels locally in your web browser memory, keeping your pictures safe and private."
+  },
+  {
+    q: "How many colors can the extractor retrieve from an image?",
+    a: "The extractor identifies and extracts the top 6 dominant colors that represent the overall color harmony of the photo."
+  },
+  {
+    q: "Does the extractor support all image file formats?",
+    a: "Yes. You can upload and analyze JPG, JPEG, PNG, WebP, BMP, and GIF image files to extract their color palettes."
+  }
 ];
 
 export default function PaletteExtractorPage() {

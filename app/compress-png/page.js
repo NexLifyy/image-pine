@@ -21,9 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Is transparency preserved?', a: 'Yes - PNG alpha channel is fully preserved.' },
-  { q: 'How much can PNG be reduced?', a: 'Typically 20-50% depending on image content.' },
-  { q: 'Are files uploaded?', a: 'No. Everything runs locally.' }
+  {
+    q: "Is PNG transparency preserved after compression?",
+    a: "Yes. PNG transparency (alpha channel) is fully preserved. The compressor uses clear canvas states to ensure transparent backgrounds remain completely transparent."
+  },
+  {
+    q: "How much can a PNG file size be reduced?",
+    a: "Since PNG is a lossless format, standard quality adjustments aren't possible. The compressor reduces file size by scaling down the dimensions (width and height) or using WebP export options, yielding 20% to 50% savings depending on the content."
+  },
+  {
+    q: "What is the safeguard if the compressed PNG becomes larger than the original?",
+    a: "Because browser canvas encoders are less optimized than native PNG editors, exporting can sometimes result in a larger file. Our tool detects this and automatically falls back to your original file, ensuring you never download a larger version."
+  },
+  {
+    q: "Are my PNG screenshots or graphics uploaded to a server?",
+    a: "No. Everything is processed entirely in your browser sandbox, making it safe for sensitive corporate screenshots, logos, signatures, and documents."
+  },
+  {
+    q: "Can I convert my PNG to JPG or WebP during compression?",
+    a: "Yes. You can select JPG or WebP as the output format. WebP is highly recommended as it offers excellent compression while preserving transparency."
+  },
+  {
+    q: "Can I compress multiple PNG files at once?",
+    a: "This tool is designed for individual file optimization. For batch workflows, you can use our Bulk Resizer or general Image Converter tools."
+  }
 ];
 
 export default function CompressPngPage() {

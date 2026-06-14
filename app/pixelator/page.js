@@ -22,9 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'How does the pixelation work?', a: 'We draw the image onto an offscreen canvas at a very small resolution (e.g. 32x32 pixels), apply color palette mapping, and then redraw it back onto the main canvas with image smoothing disabled to keep edges sharp.' },
-  { q: 'What are the palette presets?', a: 'Original keeps color integrity, GameBoy maps to the four shades of green from the original 1989 GameBoy, and NES clusters to a retro 16-color NES palette.' },
-  { q: 'Can I add grid dividers?', a: 'Yes. Enabling the Grid Line overlay draws 1px dark/light lines between pixel blocks.' }
+  {
+    q: "How does the image-to-pixel-art generator work?",
+    a: "The tool scales your image down to a small target pixel resolution, clusters the pixel colors, maps them to retro console palettes, and then scales the result back up with image-smoothing disabled to keep pixel edges sharp."
+  },
+  {
+    q: "What vintage console color palettes are available?",
+    a: "We include: Original Colors, GameBoy Green-scale (4 green shades), NES 8-Bit (classic retro colors), Commodore 64, and Grayscale profiles."
+  },
+  {
+    q: "Can I render grid lines over my pixel art?",
+    a: "Yes. You can enable the 'Show Grid' option and customize the grid line color and thickness to overlay block dividers, giving a traditional grid draft look."
+  },
+  {
+    q: "Are my images uploaded to any remote server for pixelation?",
+    a: "No. The pixel downscaling, color mapping, and upscale rendering are executed entirely client-side in your browser sandbox."
+  },
+  {
+    q: "What block size setting should I use for my image?",
+    a: "Lower block sizes (e.g. 8px) preserve more details from the original photo, while larger block sizes (e.g. 32px or 64px) generate a highly stylized, blocky, retro pixel-art aesthetic."
+  },
+  {
+    q: "Can I export my pixel art as a vector file or high-resolution PNG?",
+    a: "You can download your retro creations as high-resolution PNG files, scaled up so that the pixel blocks remain perfectly sharp when shared or printed."
+  }
 ];
 
 const PALETTES = [

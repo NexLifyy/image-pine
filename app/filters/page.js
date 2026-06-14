@@ -63,9 +63,30 @@ export default function FiltersPage() {
   ];
 
   const _FAQS = [
-    { q: 'Does adjusting filters degrade image resolution?', a: 'No. The filters are rendered directly onto a high-quality HTML5 Canvas matching the exact pixel dimensions of your uploaded image.' },
-    { q: 'What filter presets are available?', a: 'We include five professional presets: Polaroid (retro high contrast), Vintage (faded sepia), Warm (golden sunset tones), Cool (ocean blue tones), and High Contrast (intense shadows and highlights).' },
-    { q: 'Can I export in a different format?', a: 'Yes. You can upload in any format (like PNG) and export as a JPEG, WebP, or keep the original format.' }
+    {
+      q: "Does adjusting filters degrade my original image resolution?",
+      a: "No. The filters and adjustment parameters are rendered directly onto a high-quality canvas that matches the exact pixel dimensions of your uploaded photo."
+    },
+    {
+      q: "What filter presets are available in this tool?",
+      a: "We include five professional presets: Polaroid (retro high contrast), Vintage (faded sepia tones), Warm (golden sunset hues), Cool (serene ocean blue tones), and High Contrast (intense shadows and highlights)."
+    },
+    {
+      q: "Can I export my edited photo in a different file format?",
+      a: "Yes. You can upload in any format (such as PNG or WebP) and choose to export your final styled image as a JPEG, PNG, or WebP file."
+    },
+    {
+      q: "Are my private photos uploaded to a server when applying filters?",
+      a: "No, never. The filter sliders (brightness, contrast, saturation, blur, hue-rotate, sepia) apply pixel adjustments locally in your browser memory."
+    },
+    {
+      q: "Can I reset my filter adjustments and start over?",
+      a: "Yes. You can click the 'Reset Sliders' or similar option to instantly return all slider values to their original defaults without reloading the page."
+    },
+    {
+      q: "Is there a size limit on the photos I can upload?",
+      a: "For optimal real-time editing performance, we recommend keeping images under 15 MB to ensure smooth slider tracking and render updates."
+    }
   ];
 
   useEffect(() => {

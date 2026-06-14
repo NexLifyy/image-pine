@@ -22,9 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'What is HEIC format?', a: 'HEIC is Apple\'s default photo format used on iPhone since iOS 11.' },
-  { q: 'Why convert to JPG?', a: 'JPEG is universally compatible with all devices and apps.' },
-  { q: 'Are files uploaded?', a: 'No. Conversion runs locally in your browser.' }
+  {
+    q: "Can I convert HEIC photos from my iPhone to JPG online?",
+    a: "Yes. This tool is built specifically to convert Apple's HEIC/HEIF photo formats to standard JPEGs so they can be viewed on any device."
+  },
+  {
+    q: "Are my iPhone photos uploaded to a server for HEIC conversion?",
+    a: "No. The HEIC decoding is performed locally in your browser memory using client-side JavaScript libraries. Your private photos never leave your computer."
+  },
+  {
+    q: "Does this HEIC converter support batch files?",
+    a: "Yes. You can upload multiple HEIC files at once. The converter will process them locally in a queue, letting you download them individually or as a single .zip file."
+  },
+  {
+    q: "Will my converted HEIC photos lose visual quality?",
+    a: "HEIC offers high compression, but JPEG is lossy. To preserve details, our tool renders the decoded pixels to canvas and lets you set the JPEG quality slider to 90% or higher."
+  },
+  {
+    q: "What happens to transparent HEIC files when converting to JPG?",
+    a: "Since JPEG does not support transparency, any transparent areas in your HEIC image will automatically be filled with a solid white background."
+  },
+  {
+    q: "Can I resize the width and height of my HEIC images during conversion?",
+    a: "Yes. You can set a custom width or height, or scale by a percentage in the options panel to resize your photos while converting them."
+  }
 ];
 
 export default function HeicToJpgPage() {

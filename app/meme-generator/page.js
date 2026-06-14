@@ -22,10 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Can I upload my own image?', a: 'Yes! Click "Upload Custom Image" or the first card in the grid to load any local JPEG, PNG, or WebP file.' },
-  { q: 'How do I edit or move the text?', a: 'You can type directly into the text fields overlaid on the image, and drag them anywhere using the circular handle on top of each box.' },
-  { q: 'Is there a watermark on exported memes?', a: 'No. ImagePine is completely free and does not add any watermarks to your creations.' },
-  { q: 'Does it work with transparent PNG files?', a: 'Yes. PNG transparency is preserved in the final generated meme.' }
+  {
+    q: "Can I upload my own custom image templates?",
+    a: "Yes! Click the 'Upload Custom Image' card in the template library to import any local JPEG, PNG, or WebP file to generate a custom meme."
+  },
+  {
+    q: "How do I edit, position, and resize the caption text?",
+    a: "Type your captions into the text inputs. You can drag the text boxes directly on the canvas using circular handles, select different fonts, change colors, and resize the text using sliders."
+  },
+  {
+    q: "Is there a watermark added to the generated memes?",
+    a: "No. Our meme generator is 100% free with no watermarks, meaning your memes remain clean and fully customized."
+  },
+  {
+    q: "Does this tool work with transparent PNG images?",
+    a: "Yes. If you upload a custom PNG with transparent areas, the transparency channel is preserved in the final compiled meme."
+  },
+  {
+    q: "Are my custom memes or pictures uploaded to a server?",
+    a: "No. The text overlays, font packages, and canvas exports are processed locally in your browser sandbox, keeping your photos secure and private."
+  },
+  {
+    q: "Can I add multiple text boxes to a single meme?",
+    a: "Yes. You can add extra custom text boxes by clicking the '+ Add Text' button, and style each of them independently on your workspace."
+  }
 ];
 
 const CUSTOM_BOX_COORDINATES = {

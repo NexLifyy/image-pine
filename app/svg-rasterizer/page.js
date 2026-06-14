@@ -64,9 +64,30 @@ export default function SvgRasterizerPage() {
   ];
 
   const _FAQS = [
-    { q: 'Why do my exported PNGs look pixelated?', a: 'By default, rendering a small SVG directly to canvas preserves its small size. To get a high-quality raster, scale up the dimensions (e.g. choose 4x or type 2000px width). The vector details will remain perfectly crisp!' },
-    { q: 'How does transparent background work?', a: 'If you choose "Transparent Background" and export to PNG or WebP, the background will remain clear. JPEG does not support transparency, so it will fall back to a white background.' },
-    { q: 'Can I render SVGs with embedded stylesheets or inline scripts?', a: 'Yes. Since the browser engine renders the SVG payload, local styles are supported. However, externally linked web fonts or external network images inside the SVG may fail to load due to browser canvas security (CORS) rules.' }
+    {
+      q: "Why do my exported PNGs look pixelated?",
+      a: "By default, rendering a small SVG directly to canvas preserves its small size. To get a high-quality raster, scale up the dimensions (e.g. choose 4x or type 2000px width). The vector details will remain perfectly crisp!"
+    },
+    {
+      q: "How does transparent background work?",
+      a: "If you choose 'Transparent Background' and export to PNG or WebP, the background will remain clear. JPEG does not support transparency, so it will fall back to a white background."
+    },
+    {
+      q: "Can I render SVGs with embedded stylesheets or inline scripts?",
+      a: "Yes. Since the browser engine renders the SVG payload, local styles are supported. However, externally linked web fonts or external network images inside the SVG may fail to load due to browser canvas security (CORS) rules."
+    },
+    {
+      q: "Are my vector SVG assets uploaded to a server?",
+      a: "No. All SVG rendering and rasterization are processed client-side in your web browser, ensuring your vector artwork remains secure and private."
+    },
+    {
+      q: "What formats can I export my rasterized SVGs to?",
+      a: "You can rasterize and save your SVG vector files as PNG, JPEG, or WebP images."
+    },
+    {
+      q: "Can I specify a custom height while preserving the aspect ratio?",
+      a: "Yes. If you enter a custom width or height in the options panel, the tool automatically calculates and preserves the original aspect ratio of the SVG graphic."
+    }
   ];
 
   useEffect(() => {

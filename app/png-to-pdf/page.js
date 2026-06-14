@@ -21,8 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Is transparency supported?', a: 'Yes - PNG transparency is preserved in the PDF.' },
-  { q: 'Are files uploaded?', a: 'No. All processing is local.' }
+  {
+    q: "Will the transparent background of my PNG be preserved in the PDF?",
+    a: "Yes. The converter fully supports PNG alpha transparency channels, embedding transparent PNG graphics correctly without turning transparent backgrounds black or white."
+  },
+  {
+    q: "Can I combine multiple PNG files into one PDF document?",
+    a: "Yes. Every PNG file you upload will become a separate page in the generated PDF, arranged in the exact order you select."
+  },
+  {
+    q: "Does converting PNG to PDF affect the image resolution?",
+    a: "No. The tool embeds the original PNG pixel data directly into the PDF layout wrapper, ensuring the output remains lossless and pixel-perfect."
+  },
+  {
+    q: "Can I rearrange the order of the PNG pages before exporting?",
+    a: "Yes. You can drag and drop thumbnails in the workspace grid to reorder pages, and use the rotate buttons to fix any orientation issues."
+  },
+  {
+    q: "Are my PNG images uploaded to any server for processing?",
+    a: "No, never. The file reading, layout compilation, and PDF generation are done 100% locally in your web browser."
+  },
+  {
+    q: "Can I customize the page layout margins and page sizes?",
+    a: "Yes. You can choose to match the original image size, or fit to standard formats like A4 and US Letter with customizable page margin spacing."
+  }
 ];
 
 export default function PngToPdfPage() {
@@ -34,25 +56,6 @@ export default function PngToPdfPage() {
   const toggleFaq = (index) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
-
-  const faqs = [
-    {
-      q: "How does the converter handle PNG transparency?",
-      a: "Our PNG-to-PDF compiler supports full transparency channels, embedding alpha transparent elements correctly onto the page layers."
-    },
-    {
-      q: "Is there a limit to how many PNG files I can convert?",
-      a: "No, you can add and compile as many PNG images as you need into a single PDF document in a single batch."
-    },
-    {
-      q: "Can I rearrange the order of pages?",
-      a: "Pages are ordered in the sequence they are uploaded. If you need a specific order, select or drag files in that sequence."
-    },
-    {
-      q: "Are my files stored on your servers?",
-      a: "No, the entire compilation is executed inside your web browser locally. None of your PNG photos or PDF results are uploaded, guaranteeing maximum privacy."
-    }
-  ];
 
   // Manage object URLs lifetime safely to prevent memory leaks and premature revocation
   const prevPreviewsRef = useRef([]);

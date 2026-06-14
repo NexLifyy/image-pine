@@ -21,8 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Is transparency preserved?', a: 'Yes - PNG alpha is kept in the cropped output.' },
-  { q: 'Are files uploaded?', a: 'No. All local.' }
+  {
+    q: "Is PNG transparency preserved when cropping?",
+    a: "Yes. PNG transparency (alpha channel) is fully preserved. The resizer uses clear canvas states to prevent transparent backgrounds from turning black or white."
+  },
+  {
+    q: "Can I crop a transparent signature or logo with this tool?",
+    a: "Yes. This tool is optimized specifically for PNG files, making it ideal for cropping transparent logos, signatures, UI elements, and screenshots while keeping transparency clean."
+  },
+  {
+    q: "How do I export my cropped PNG to a smaller file size?",
+    a: "Since PNG is a lossless format, you can adjust settings to export as WebP to save up to 30% file size, or convert to JPEG (which will fill transparent areas with white)."
+  },
+  {
+    q: "Does cropping change the color profile or metadata of the PNG?",
+    a: "The tool renders the image to a canvas element and extracts it, which preserves color values but strips unnecessary metadata to optimize and reduce the output file size."
+  },
+  {
+    q: "Is there a limit on the PNG file size I can upload?",
+    a: "No. All processing runs entirely in your browser sandbox. The only limit is your local computer's memory; there are no server-imposed file limits."
+  },
+  {
+    q: "Are my PNG graphics secure when using this tool?",
+    a: "Yes. Your graphics are processed entirely client-side. No files are uploaded, keeping confidential screenshots or graphics safe."
+  }
 ];
 
 export default function CropPngPage() {

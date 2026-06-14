@@ -21,8 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Can I crop to exact pixels?', a: 'Yes - enter precise coordinates or use drag handles.' },
-  { q: 'Are files uploaded?', a: 'No. Everything is browser-based.' }
+  {
+    q: "Does cropping a JPG/JPEG image reduce its quality?",
+    a: "No. Cropping extracts a segment of pixels directly. However, since JPEG uses lossy compression, saving the cropped segment at a lower quality setting can affect details. We recommend setting the quality to 95% or higher."
+  },
+  {
+    q: "What happens to transparent areas if I upload a PNG to the JPG cropper?",
+    a: "Since the JPEG format does not support transparency, any transparent areas in your source image will automatically be filled with a solid white background."
+  },
+  {
+    q: "Can I crop a JPG to exact pixel dimensions?",
+    a: "Yes. You can drag the crop bounding box or type precise pixel values for the crop selection width, height, and coordinates in the options panel."
+  },
+  {
+    q: "Are my private JPG photos uploaded to a server?",
+    a: "No. The entire cropping and compression process runs locally on your machine. Your photos are never sent to external servers."
+  },
+  {
+    q: "Can I crop to common photo aspect ratios?",
+    a: "Yes. You can select aspect ratio presets such as 4:3, 3:2, 1:1, or 16:9 to lock the proportions of your crop selection box."
+  },
+  {
+    q: "Does this tool strip camera EXIF data from my JPEG?",
+    a: "Yes. To protect your privacy and reduce file size, default canvas exports strip camera EXIF metadata (like GPS location, date, and camera model) from the cropped JPEG."
+  }
 ];
 
 export default function CropJpgPage() {

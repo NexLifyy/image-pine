@@ -148,10 +148,30 @@ export default function MetadataPage() {
   ];
 
   const _FAQS = [
-    { q: 'What metadata streams are stored inside photos?', a: 'Exchangeable Image File Format (EXIF) lists camera settings and GPS. Extensible Metadata Platform (XMP) holds editor histories and cataloging. IPTC stores copyrights and captions. COM is plain-text comments.' },
-    { q: 'Does stripping metadata reduce image quality?', a: 'No. Our utility operates directly on the image file segments, removing headers like APP1 and APP13 without touching or re-compressing the actual image bytes. Quality remains 100% identical.' },
-    { q: 'Why should I strip metadata before sharing?', a: 'Photos shot on smartphones default to storing highly precise GPS coordinates, serial numbers, camera specifications, and software versions. Sharing these online exposes your private details.' },
-    { q: 'Is my data secure on ImagePine?', a: 'Absolutely. ImagePine processes everything directly in your browser. Your images never leave your device. There is no server involved at any point. We have zero access to your files. Your data is 100% private, guaranteed.' }
+    {
+      q: "What metadata streams are stored inside photos?",
+      a: "Exchangeable Image File Format (EXIF) lists camera settings and GPS. Extensible Metadata Platform (XMP) holds editor histories and cataloging. IPTC stores copyrights and captions. COM is plain-text comments."
+    },
+    {
+      q: "Does stripping metadata reduce image quality?",
+      a: "No. Our utility operates directly on the image file segments, removing headers like APP1 and APP13 without touching or re-compressing the actual image bytes. Quality remains 100% identical."
+    },
+    {
+      q: "Why should I strip metadata before sharing?",
+      a: "Photos shot on smartphones default to storing highly precise GPS coordinates, serial numbers, camera specifications, and software versions. Sharing these online exposes your private details."
+    },
+    {
+      q: "Is my data secure on ImagePine?",
+      a: "Absolutely. ImagePine processes everything directly in your browser. Your images never leave your device. There is no server involved at any point. We have zero access to your files. Your data is 100% private, guaranteed."
+    },
+    {
+      q: "What formats are supported for metadata stripping?",
+      a: "The metadata stripper supports JPEG, JPG, PNG, WebP, AVIF, and TIFF image formats."
+    },
+    {
+      q: "Can I strip metadata from multiple images at once?",
+      a: "Yes. You can upload multiple files at once, preview their metadata, and download all of them as cleaned images individually or in a single compiled .zip file."
+    }
   ];
 
   const handleFileSelect = (newFiles) => {

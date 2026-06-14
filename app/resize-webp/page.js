@@ -22,8 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Can I keep WebP format after resizing?', a: 'Yes - output can be saved as WebP.' },
-  { q: 'Are files uploaded?', a: 'No. Everything is local.' }
+  {
+    q: "Does this tool support transparent WebP images?",
+    a: "Yes. WebP supports alpha channel transparency, and the resizer preserves transparent backgrounds during the scaling process."
+  },
+  {
+    q: "Why should I choose WebP over JPEG or PNG for resizing?",
+    a: "WebP provides superior compression, making your resized images up to 30% smaller than JPEGs and 26% smaller than PNGs while maintaining comparable visual quality."
+  },
+  {
+    q: "Can I adjust the compression quality for WebP images?",
+    a: "Yes. You can adjust the Quality slider or specify a target file size (in KB or MB) to let the tool optimize the WebP lossy compression automatically."
+  },
+  {
+    q: "Are my WebP files processed on a server?",
+    a: "No, never. The WebP decoding, canvas drawing, and encoding are done entirely in your browser client-side, ensuring full privacy."
+  },
+  {
+    q: "Can I convert my WebP image to PNG or JPG if needed?",
+    a: "Yes. You can change the 'Save As' format in the output settings to export the resized WebP as a JPG or PNG file."
+  },
+  {
+    q: "Does this resizer support animated WebP files?",
+    a: "This tool is designed for static WebP images and processes the first frame of any animated WebP. For full animations, a specialized GIF/WebP animation editor is recommended."
+  }
 ];
 
 export default function ResizeWebpPage() {

@@ -22,8 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Why convert AVIF to JPG?', a: 'JPEG has wider compatibility with older software, systems, and email clients that do not support modern AVIF yet.' },
-  { q: 'Are files uploaded?', a: 'No. Everything runs in your browser.' }
+  {
+    q: "What is AVIF and why should I convert it to JPG?",
+    a: "AVIF is a modern high-compression image format. While it offers tiny file sizes, many legacy web browsers, emails, and operating systems do not support it yet. Converting to JPG makes it widely compatible."
+  },
+  {
+    q: "Will converting my AVIF photo to JPG make it blurry?",
+    a: "The converter uses high-quality canvas rendering. While JPEG is a lossy format, setting the quality slider to 90% or higher will keep your JPG photo sharp and clear."
+  },
+  {
+    q: "Are my private AVIF files uploaded to a server?",
+    a: "No, never. All AVIF decoding and JPG rendering are performed client-side in your web browser."
+  },
+  {
+    q: "What happens to transparent AVIF images when converting to JPG?",
+    a: "JPEG does not support transparency. Any transparent areas in your AVIF will be filled with a solid white background."
+  },
+  {
+    q: "Can I resize the AVIF image during conversion?",
+    a: "Yes. You can enter a custom target width and height in the options panel to scale your image while converting."
+  },
+  {
+    q: "Can I batch convert multiple AVIF files at once?",
+    a: "Yes. You can upload up to 50 AVIF files in a batch and download the converted JPG files individually or as a single .zip file."
+  }
 ];
 
 export default function AvifToJpgPage() {
@@ -184,32 +206,13 @@ export default function AvifToJpgPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const faqs = [
-    {
-      q: "Does JPEG support AVIF transparency?",
-      a: "No. The JPEG format does not support alpha transparency. Any transparent background in your AVIF file will convert to solid white."
-    },
-    {
-      q: "Can I choose the output file size?",
-      a: "Yes. Adjusting the quality range slider under Advanced Options allows you to compress the JPEG and reduce its file size."
-    },
-    {
-      q: "Can I resize my images?",
-      a: "Yes. You can select 'Custom size' in the Resize dropdown and enter custom pixel dimensions."
-    },
-    {
-      q: "Are my AVIF files uploaded to a server?",
-      a: "No. All conversions happen locally in your browser to guarantee absolute security."
-    }
-  ];
-
   return (
     <ToolPageShell
       title="AVIF to JPG Converter"
       subtitle="Convert modern AVIF images to JPEG for maximum compatibility. Free, browser-based, no upload required."
       features={_FEATURES}
       steps={_STEPS}
-      faqs={faqs}
+      faqs={_FAQS}
       seoText="Convert AVIF to JPG online for free. Transform AVIF to universally compatible JPEG in your browser. No uploads."
     >
       <div className="flex flex-col gap-6">

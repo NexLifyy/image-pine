@@ -21,9 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Can I rotate to a custom angle?', a: 'Yes - the angle slider goes from -360° to +360°.' },
-  { q: 'Does rotating reduce quality?', a: 'No. Canvas rotation is lossless.' },
-  { q: 'Are images uploaded?', a: 'Never. All rotation happens in your browser.' }
+  {
+    q: "Can I rotate my image to any custom angle?",
+    a: "Yes. You can rotate by standard 90-degree increments or use the fine-tuning slider to rotate to any custom angle from -360° to +360°."
+  },
+  {
+    q: "Does rotating an image reduce its visual quality?",
+    a: "For standard 90, 180, and 270-degree rotations, the pixels are simply mapped to new positions, which is completely lossless. For custom angles, some minor resampling is used to align pixels smoothly."
+  },
+  {
+    q: "What happens to the canvas size when I rotate an image?",
+    a: "The canvas dynamically expands to fully fit the rotated image boundaries so that no corners or edges of your original image are cropped out."
+  },
+  {
+    q: "What background color is used to fill the empty corners after custom rotation?",
+    a: "For PNG and WebP files, the empty corners are left completely transparent. For JPEG files, the empty corners are filled with a clean white background."
+  },
+  {
+    q: "Are my images uploaded to a server for rotation?",
+    a: "No, never. All calculations, rotation matrix applications, and canvas exports are performed locally in your browser."
+  },
+  {
+    q: "Can I save my rotated image in a different format?",
+    a: "Yes. You can choose to export your rotated result as JPEG, PNG, or WebP regardless of the original file's format."
+  }
 ];
 
 export default function RotatePage() {

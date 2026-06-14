@@ -22,9 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'What formats can I convert between?', a: 'JPEG, PNG, WebP, GIF and SVG.' },
-  { q: 'Does conversion reduce quality?', a: 'Lossless for PNG; adjustable for JPEG/WebP.' },
-  { q: 'Are files uploaded?', a: 'No. All conversion is browser-based.' }
+  {
+    q: "What image file formats can this general converter handle?",
+    a: "You can upload almost any popular format including JPEG, PNG, WebP, SVG, BMP, ICO, AVIF, HEIC, and TIFF. You can convert them to JPEG, PNG, WebP, GIF, ICO, or SVG."
+  },
+  {
+    q: "Are my files uploaded to a server to perform the conversion?",
+    a: "No. The conversions run 100% locally inside your browser client-side using JavaScript. Your private images are never sent over the internet or saved on our servers."
+  },
+  {
+    q: "Does converting between formats affect my image quality?",
+    a: "Converting to lossless formats like PNG preserves pixel data exactly. Converting to lossy formats like JPEG or WebP uses high-quality canvas rendering with quality slider controls to keep details sharp."
+  },
+  {
+    q: "How do I convert transparency when exporting to JPEG or BMP?",
+    a: "JPEG and BMP formats do not support transparency (alpha channels). Any transparent areas in your source image will automatically be filled with a solid white background upon export."
+  },
+  {
+    q: "Can I resize my images during the conversion process?",
+    a: "Yes. You can enable custom width/height options in the settings panel to resize your images dynamically while converting them to your target format."
+  },
+  {
+    q: "Can I convert multiple images at the same time?",
+    a: "Yes. You can drag and drop multiple files to batch convert them. The tool will process them in sequence locally and let you download them as individual files or in a single .zip archive."
+  }
 ];
 
 export default function ImageConverterPage() {

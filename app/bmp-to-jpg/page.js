@@ -22,8 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Why convert BMP to JPG?', a: 'BMP (Bitmap) files are uncompressed and have extremely large file sizes. Converting them to JPG compresses the image significantly, making it easier to share, send, or upload.' },
-  { q: 'Are files uploaded?', a: 'No. Everything runs in your browser.' }
+  {
+    q: "What is the advantage of converting BMP to JPG?",
+    a: "BMP (Bitmap) images are uncompressed files with very large file sizes. Converting BMP to JPG drastically reduces the file size (often by over 90%) while keeping the image looking virtually identical."
+  },
+  {
+    q: "Does converting BMP to JPG reduce image quality?",
+    a: "Since BMP is lossless and JPG is lossy, some compression is applied. However, by setting the quality slider to 90% or higher, the detail loss is imperceptible."
+  },
+  {
+    q: "Are my BMP files uploaded to a server?",
+    a: "No. All processing runs locally in your browser, keeping your Bitmap images secure on your machine."
+  },
+  {
+    q: "What happens to transparent areas in my BMP file?",
+    a: "BMP files rarely contain transparency, but if they do, the JPEG output will fill those transparent areas with a solid white background."
+  },
+  {
+    q: "Can I compress the JPG output size to a specific limit?",
+    a: "Yes. You can use the Quality slider or specify a target file size (e.g. 200 KB) in the settings."
+  },
+  {
+    q: "Can I batch convert multiple BMP files?",
+    a: "Yes. You can upload multiple BMP images, and the tool will process them in a queue for individual or .zip download."
+  }
 ];
 
 export default function BmpToJpgPage() {
@@ -184,32 +206,13 @@ export default function BmpToJpgPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const faqs = [
-    {
-      q: "Does JPEG support BMP transparency?",
-      a: "No. The JPEG format does not support alpha transparency. Any transparent background in your BMP file will convert to solid white."
-    },
-    {
-      q: "How much smaller will the JPG file be?",
-      a: "BMP files are uncompressed bitmaps, meaning they have very large sizes. JPG is a compressed format and will usually be 80% to 95% smaller than the original BMP file, without any noticeable loss of visual details."
-    },
-    {
-      q: "Can I resize my images?",
-      a: "Yes. You can select 'Custom size' in the Resize dropdown and enter custom pixel dimensions."
-    },
-    {
-      q: "Are my BMP files uploaded to a server?",
-      a: "No. All conversions happen locally in your browser to guarantee absolute security."
-    }
-  ];
-
   return (
     <ToolPageShell
       title="BMP to JPG Converter"
       subtitle="Convert Windows Bitmap (BMP) files to JPG format. Free, browser-based, no upload required."
       features={_FEATURES}
       steps={_STEPS}
-      faqs={faqs}
+      faqs={_FAQS}
       seoText="Convert BMP to JPG online for free. Transform BMP to universally compatible JPEG in your browser. No uploads."
     >
       <div className="flex flex-col gap-6">

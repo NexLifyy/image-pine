@@ -448,11 +448,30 @@ export default function Home() {
   // InputField is defined at module level above to avoid remount-on-render focus loss.
 
   const faqs = [
-    {q:'What image formats are supported?',a:'JPEG, JPG, PNG, WebP, and SVG. You can also convert between formats on export.'},
-    {q:'Does resizing or rotating reduce quality?',a:'No. All transforms use HTML5 Canvas at full resolution with high-quality bicubic interpolation.'},
-    {q:'How does target file size compression work?',a:'Our binary search algorithm finds the best quality setting to hit your target. If needed, it slightly scales dimensions.'},
-    {q:'Are my images uploaded to a server?',a:'Never. Everything runs 100% locally in your browser using HTML5 Canvas.'},
-    {q:'Can I process multiple images?',a:'Yes - upload multiple files, switch between them in the sidebar, and download each result separately.'},
+    {
+      q: "What editing tools does ImagePine offer?",
+      a: "ImagePine provides a complete suite of browser-based image utilities, including single and bulk image resizers, croppers, compressors (for JPG, PNG, WebP, and GIF), manipulators (flip/rotate), creative tools (collage maker, meme generator, photo filters, pixel art maker, watermarkers), and converters (such as HEIC, AVIF, TIFF, SVG, and PDF converters)."
+    },
+    {
+      q: "What image file formats are supported for conversion and editing?",
+      a: "We support uploading almost all popular image formats, including JPEG, PNG, WebP, SVG, BMP, AVIF, HEIC, and TIFF. You can also convert between these formats on export."
+    },
+    {
+      q: "Are my private images uploaded to any server?",
+      a: "No, never. All image editing, resizing, cropping, compression, and format conversions are performed 100% locally in your web browser. No files are ever uploaded to a server, ensuring absolute privacy for your photos and documents."
+    },
+    {
+      q: "Can I resize or compress multiple images at once?",
+      a: "Yes. We have dedicated bulk processing tools like the Bulk Image Resizer, Bulk Renamer, and batch image converters that allow you to upload, edit, and download up to 50 files simultaneously in a single, convenient batch."
+    },
+    {
+      q: "How does target file size compression work?",
+      a: "When you specify a target file size (e.g. 100 KB), our binary search algorithm automatically optimizes the quality settings of the output format. For lossless formats like PNG, it scales down dimensions to successfully meet your requested target limit."
+    },
+    {
+      q: "Is there a limit on file sizes or the number of conversions?",
+      a: "Since all processing is done locally in your browser sandbox using your computer's resources, there are no server-imposed file size limits or daily conversion caps. You can process as many images as you need, entirely for free, with no accounts or watermarks."
+    }
   ];
 
   return (

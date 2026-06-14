@@ -22,8 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'What resolution can I use?', a: 'Any resolution - enter desired pixel dimensions.' },
-  { q: 'Are files uploaded?', a: 'No. All conversion is browser-based.' }
+  {
+    q: "What formats can I convert my SVG files to?",
+    a: "You can rasterize and convert SVG vector files to PNG, JPEG, WebP, or BMP formats instantly in the browser."
+  },
+  {
+    q: "Will the converted raster image keep the SVG's transparent background?",
+    a: "Yes, if you choose PNG or WebP as the output format. If you choose JPEG, the transparent areas will be filled with a solid white background."
+  },
+  {
+    q: "Can I choose a specific resolution for the output raster image?",
+    a: "Yes. Since SVGs are vector graphics, they can scale infinitely. You can enter any custom target width and height in the options panel, and the tool will rasterize the SVG at that exact resolution without pixelation."
+  },
+  {
+    q: "Are my vector SVG designs uploaded to a server?",
+    a: "No. The SVG parsing, canvas scaling, and raster image generation are done entirely in your browser sandbox, guaranteeing absolute privacy."
+  },
+  {
+    q: "Does the SVG converter support solid background colors?",
+    a: "Yes. You can choose to export with a transparent background, a solid white background, or select a custom solid color to fill behind the vector paths."
+  },
+  {
+    q: "How does this tool handle complex SVG elements like text, gradients, and clips?",
+    a: "The tool loads the SVG data as a secure blob into a browser Image object before drawing it onto a Canvas. This relies on your browser's native rendering engine, which fully supports standard SVG gradients, text fonts, and clipping paths."
+  }
 ];
 
 export default function SvgConverterPage() {

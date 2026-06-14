@@ -22,8 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Is transparency preserved?', a: 'Yes - PNG alpha is fully preserved.' },
-  { q: 'Are files uploaded?', a: 'No. All processing is local.' }
+  {
+    q: "Will the transparent background of my PNG be preserved when resized?",
+    a: "Yes. PNG transparency (alpha channel) is fully preserved. The resizer uses clear canvas states to prevent transparent backgrounds from turning black or white."
+  },
+  {
+    q: "How do I compress my PNG to a smaller size during resizing?",
+    a: "Since PNG is a lossless format, standard quality adjustments aren't possible without losing transparency. If you set a target size limit, the tool will scale down the dimensions (width/height) to meet the limit, or you can export it as WebP."
+  },
+  {
+    q: "Can I convert my PNG to another format during resize?",
+    a: "Yes. While this is a dedicated PNG resizer, you can choose to export the output as JPEG or WebP if you want to optimize for file size."
+  },
+  {
+    q: "What is the difference between this tool and the general resizer?",
+    a: "This tool is optimized specifically for PNG workflows, ensuring transparency rendering settings are pre-configured, but supports the same robust client-side scaling engine."
+  },
+  {
+    q: "Is there a limit on the PNG file size I can upload?",
+    a: "Since all processing is done locally in your browser sandbox, there is no server-imposed limit. However, extremely large files (e.g., over 50 MB) depend on your device's memory."
+  },
+  {
+    q: "Are my PNG files secure on this website?",
+    a: "Yes. The tool runs 100% locally in your browser. No files are uploaded to any server, making it safe for processing confidential screenshots, signatures, or graphics."
+  }
 ];
 
 export default function ResizePngPage() {

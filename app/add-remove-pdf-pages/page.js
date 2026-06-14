@@ -22,10 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'How do I add pages from other files?', a: 'Once your initial PDF is loaded, click the "+ Add PDF / Images" button in the toolbar. Select secondary PDFs or images, and their pages will be appended to your workspace.' },
-  { q: 'Can I add blank pages?', a: 'Yes. Click "+ Add Blank Page" in the toolbar to insert blank US Letter/A4-sized pages at the end of the document, which you can then rearrange.' },
-  { q: 'Is there a page limit?', a: 'No. The tool processes everything locally in your browser sandbox, allowing you to manipulate and export files of any size.' },
-  { q: 'Are my files uploaded to a server?', a: 'No, never. The file parsing, rendering, and rebuilding are done 100% in your browser using local canvas and JS libraries.' }
+  {
+    q: "How do I upload and combine multiple PDF files at once?",
+    a: "Once you upload your primary PDF, click the '+ Add PDF / Images' button in the toolbar. You can select multiple additional PDF documents or images, and their pages will automatically be loaded as thumbnails at the end of your workspace."
+  },
+  {
+    q: "Can I reorder individual pages, and how do I do it?",
+    a: "Yes! You can drag and drop the page thumbnails to rearrange them into any sequence. You can also rotate individual pages using the rotation buttons on each thumbnail."
+  },
+  {
+    q: "How do I remove unwanted pages or insert blank pages?",
+    a: "To delete a page, click the trash icon on its thumbnail. To insert a blank page (for writing notes or inserting covers), click '+ Add Blank Page' in the toolbar. You can drag the new blank page to any position in the document."
+  },
+  {
+    q: "Is there a maximum page limit or file size limit?",
+    a: "Since all file rendering, reordering, and generation run 100% locally in your browser, there are no hard server limits. The performance depends on your device's memory; usually, files up to 150MB or 500 pages process seamlessly."
+  },
+  {
+    q: "Are my uploaded PDF documents private and secure?",
+    a: "Absolutely. Your documents are processed entirely client-side using JavaScript libraries. They are never uploaded to any server or shared with third parties, keeping your confidential information completely private."
+  },
+  {
+    q: "Does modifying the page sequence affect the quality of my PDF content?",
+    a: "No. Reordering or removing pages does not re-compress your document's text or images. The tool manipulates the file structure directly, preserving the original resolution and clarity of your PDF."
+  }
 ];
 
 export default function AddRemovePdfPagesPage() {

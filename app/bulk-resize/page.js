@@ -22,9 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'How many images at once?', a: 'Up to 50 images per batch.' },
-  { q: 'Same size for all?', a: 'Yes - one target dimension applied to all.' },
-  { q: 'Are images uploaded?', a: 'No. Everything runs in your browser.' }
+  {
+    q: "How many images can I resize at once in a batch?",
+    a: "You can upload and process up to 50 images simultaneously in a single batch."
+  },
+  {
+    q: "Can I apply different dimensions to each image in the bulk batch?",
+    a: "No. The bulk tool applies the same target width, height, and settings to all uploaded images in the batch to ensure consistency."
+  },
+  {
+    q: "How does the aspect ratio locking work for bulk images of different shapes?",
+    a: "You can choose how to handle different aspect ratios using the scaling options, such as 'Fit' (adds padding/margins), 'Fill' (stretches to match exact size), or 'Crop' (centers and cuts excess)."
+  },
+  {
+    q: "How do I download the bulk resized images?",
+    a: "Once the batch is processed, you can download all images packed together in a single, organized .zip file, or download individual images one by one."
+  },
+  {
+    q: "Are my bulk images uploaded to a server?",
+    a: "No. Just like our single resizer, the bulk resizer runs entirely client-side. Processing up to 50 images is done locally in your browser memory, keeping your data secure."
+  },
+  {
+    q: "What happens if I upload different image formats in the same batch?",
+    a: "You can choose a uniform output format (like JPEG, PNG, or WebP) for all images, or choose 'Original' to keep each file's original format."
+  }
 ];
 
 export default function BulkResizePage() {

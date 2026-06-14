@@ -23,9 +23,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Is my document text safe?', a: 'Yes. The OCR parsing is done purely using Tesseract.js Web Workers inside your browser. Your images and text never traverse any network.' },
-  { q: 'Why does the first run take a bit longer?', a: 'Tesseract.js downloads the language model file (e.g. eng.traineddata) on the first run, which is cached in your browser indexDB for subsequent instantaneous loads.' },
-  { q: 'Can it scan handwritten text?', a: 'It performs best with printed fonts, clean documents, and UI screenshots. Handwritten text may have lower accuracy.' }
+  {
+    q: "Is my document text safe?",
+    a: "Yes. The OCR parsing is done purely using Tesseract.js Web Workers inside your browser. Your images and text never traverse any network."
+  },
+  {
+    q: "Why does the first run take a bit longer?",
+    a: "Tesseract.js downloads the language model file (e.g. eng.traineddata) on the first run, which is cached in your browser indexDB for subsequent instantaneous loads."
+  },
+  {
+    q: "Can it scan handwritten text?",
+    a: "It performs best with printed fonts, clean documents, and UI screenshots. Handwritten text may have lower accuracy."
+  },
+  {
+    q: "What languages does the OCR tool support?",
+    a: "We support several popular language models, including English, Spanish, French, German, and Simplified Chinese."
+  },
+  {
+    q: "How can I export the extracted text?",
+    a: "You can copy the extracted text directly to your clipboard with a single click, or download it as a standard .txt file."
+  },
+  {
+    q: "Does the tool support scanning text from multi-page documents?",
+    a: "This OCR tool extracts text from a single uploaded image. For multi-page PDFs, we recommend converting pages to images first before scanning."
+  }
 ];
 
 const LANGUAGES = [

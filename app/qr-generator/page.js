@@ -139,9 +139,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'What is EAN-13 EAN encoding?', a: 'EAN-13 is the global standard barcode format used to scan books and merchandise. ISBN-13 book numbers map directly into EAN-13 barcodes.' },
-  { q: 'How does the ISBN auto-fixing checksum work?', a: 'If you type only 12 digits, we calculate and attach the final check digit automatically. If you type 13 digits, we verify the digit and auto-correct it if a typo is present.' },
-  { q: 'Can I customize barcode colors?', a: 'Yes. You can customize the dark bar colors and background card colors, but standard black-on-white scans most reliably.' }
+  {
+    q: "What is the difference between EAN-13 and ISBN barcode generation?",
+    a: "EAN-13 is a retail barcode standard. ISBN-13 is a specialized subset of EAN-13 used globally for book numbering. Our barcode generator handles both formats seamlessly."
+  },
+  {
+    q: "How does the checksum validation for ISBN work?",
+    a: "The generator validates the 13th check-digit using the standard ISBN modulus algorithm. If you enter 12 digits, it automatically calculates and appends the correct 13th digit."
+  },
+  {
+    q: "Can I customize the color and style of the QR Codes?",
+    a: "Yes. You can change the foreground color, background color, and choose custom dot patterns or square block eye styles for the QR Code."
+  },
+  {
+    q: "Can I upload a custom logo image inside my QR Code?",
+    a: "Yes. You can upload a PNG logo (e.g. your logo) to place in the center of the QR Code, with options to adjust the logo scale and background padding."
+  },
+  {
+    q: "Does the barcode generator require internet connectivity?",
+    a: "No. All barcode and QR Code generation is done locally in browser memory using JavaScript libraries. No code data or identifiers are sent to external servers."
+  },
+  {
+    q: "What file formats can I download my barcode or QR Code in?",
+    a: "You can export and save your generated codes as high-resolution PNG files, ensuring they scan reliably on screens or printed materials."
+  }
 ];
 
 export default function QrGeneratorPage() {

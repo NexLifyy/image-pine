@@ -22,8 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Will SVG look exactly like PNG?', a: 'Simple images like logos convert well. Complex photos may lose detail.' },
-  { q: 'Are files uploaded?', a: 'No. Everything is browser-based.' }
+  {
+    q: "How does PNG to SVG conversion work?",
+    a: "The tool traces the pixel outlines and color clusters of the PNG raster image to generate vector paths, which are saved in the scalable SVG format."
+  },
+  {
+    q: "Will the converted SVG look identical to my PNG?",
+    a: "Since raster images are made of pixels and SVGs are made of vector lines, the output is a stylized vector tracing. It works best for logos, icons, signatures, and clean graphics, rather than complex photographs."
+  },
+  {
+    q: "Can I adjust the tracing settings?",
+    a: "Yes. You can customize settings like color quantity, trace detail (threshold), and path smoothing to change the appearance of the output SVG."
+  },
+  {
+    q: "Are my PNG graphics uploaded to a server for vectorization?",
+    a: "No. The tracing algorithm runs locally in your web browser, ensuring complete privacy."
+  },
+  {
+    q: "Will the transparent areas of the PNG be preserved in the SVG?",
+    a: "Yes. The vectorizer only traces solid pixel regions, keeping transparent areas completely empty and transparent in the output SVG."
+  },
+  {
+    q: "Is there a limit on the file size I can upload for SVG vectorization?",
+    a: "Since tracing raster images into vectors requires significant local CPU power, we recommend keeping PNG files under 10 MB to prevent browser performance lag."
+  }
 ];
 
 export default function PngToSvgPage() {

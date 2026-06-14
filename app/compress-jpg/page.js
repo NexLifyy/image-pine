@@ -21,8 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'How much can I compress a JPEG?', a: '50-90% reduction with minimal visible quality loss.' },
-  { q: 'Are files uploaded?', a: 'No. Everything runs in your browser.' }
+  {
+    q: "How much file size can I save by compressing a JPG?",
+    a: "You can typically reduce JPEG file sizes by 50% to 90% with almost no visible quality loss, depending on the detail level and original compression of your image."
+  },
+  {
+    q: "Will compressing a JPG make it look blurry or pixelated?",
+    a: "The tool uses optimized canvas bicubic rendering to maintain sharp details. If you keep the quality slider at 80% or higher, the differences are virtually imperceptible to the human eye."
+  },
+  {
+    q: "Can I compress a JPG to a specific file size (like 100 KB)?",
+    a: "Yes. You can input your target file size in the settings panel. The tool will run a fast binary search on the quality scale to find the maximum quality that fits your target size limit."
+  },
+  {
+    q: "Are my photos uploaded to a server for JPEG compression?",
+    a: "No. The entire compression routine runs client-side in your web browser. No photos are uploaded or saved on our servers."
+  },
+  {
+    q: "Does this tool preserve EXIF metadata (camera model, GPS coordinates)?",
+    a: "To protect your privacy and maximize file size savings, the compressor strips camera EXIF metadata (like GPS location, date taken, and device info) during export."
+  },
+  {
+    q: "What happens if my JPG contains transparent areas?",
+    a: "JPG files do not support transparency. If you upload a PNG/WebP with transparent areas, they will automatically be filled with a clean white background."
+  }
 ];
 
 export default function CompressJpgPage() {

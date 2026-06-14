@@ -21,8 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Is animation preserved?', a: 'Yes - animation frames are kept intact.' },
-  { q: 'Are files uploaded?', a: 'No. Browser-based only.' }
+  {
+    q: "Is the animation of my GIF preserved during compression?",
+    a: "Yes. The tool fully preserves animation frames and loops. It extracts and recompiles the frame sequence locally."
+  },
+  {
+    q: "How does GIF compression work in the browser?",
+    a: "The tool scales down the dimensions (width and height) of the GIF frames or adjusts the frame rate to reduce the overall data footprint of the animation."
+  },
+  {
+    q: "Will the quality of the animation degrade?",
+    a: "Standard canvas compression reduces dimensions, which may make the animation look slightly smaller, but keeps the original frame details and timings intact."
+  },
+  {
+    q: "Are my animated GIF files uploaded to any server?",
+    a: "No. The GIF decoding, resizing, and encoding run 100% locally in your web browser. Your animated files are completely private."
+  },
+  {
+    q: "Can I set a target file size limit for GIFs?",
+    a: "Yes. You can specify a target size (in KB or MB), and the tool will iteratively scale down the animation dimensions until it fits under your desired limit."
+  },
+  {
+    q: "Can I convert my animated GIF to another format?",
+    a: "GIFs are composed of multiple frames. If you export to JPEG or WebP, the tool will capture and convert the first frame of the animation as a static image."
+  }
 ];
 
 export default function CompressGifPage() {

@@ -21,6 +21,33 @@ const _STEPS = [
   { n: '3', title: 'Download', desc: 'Save single JPEG or download all in a ZIP.' }
 ];
 
+const _FAQS = [
+  {
+    q: "Does this tool support multi-page TIFF files?",
+    a: "Yes! Unlike basic converters that only process the first page, this tool decodes every page inside a multi-page TIFF file."
+  },
+  {
+    q: "How can I download pages from a multi-page TIFF?",
+    a: "You can download all pages packed together in a single, organized .zip file containing individual JPEGs, or hover over page thumbnails in the workspace grid to download specific pages one by one."
+  },
+  {
+    q: "Are my heavy TIFF files uploaded to a server?",
+    a: "No, never. TIFF files are often very large, but our tool decodes them entirely in your browser using local canvas and WebAssembly libraries. No files are uploaded."
+  },
+  {
+    q: "What happens to transparency in transparent TIFF images?",
+    a: "Since JPEG does not support transparency, any transparent areas in your TIFF pages will automatically be filled with a solid white background."
+  },
+  {
+    q: "Will the image quality be preserved?",
+    a: "Yes. The tool decodes the original pixel directories of the TIFF and renders them to canvas. You can set the JPG quality slider to 90% or higher to keep details sharp."
+  },
+  {
+    q: "Can I resize the output JPG pages of the TIFF?",
+    a: "Yes. You can specify a custom width or height, or scale by a percentage in the settings panel to resize all pages in the TIFF during conversion."
+  }
+];
+
 export default function TiffToJpgPage() {
   const [file, setFile] = useState(null);
   const [quality, setQuality] = useState(90);
@@ -249,32 +276,13 @@ export default function TiffToJpgPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const faqs = [
-    {
-      q: "Does JPEG support TIFF transparency?",
-      a: "No. The JPEG format does not support alpha transparency. Any transparent background in your TIFF file will convert to solid white."
-    },
-    {
-      q: "Does this support multi-page TIFFs?",
-      a: "Yes! If your TIFF file contains multiple pages, our tool decodes all pages and packages them into a single, compressed ZIP file containing all the converted JPEGs."
-    },
-    {
-      q: "Can I resize my images?",
-      a: "Yes. You can select 'Custom size' in the Resize dropdown and enter custom pixel dimensions."
-    },
-    {
-      q: "Are my TIFF files uploaded to a server?",
-      a: "No. All conversions happen locally in your browser to guarantee absolute security."
-    }
-  ];
-
   return (
     <ToolPageShell
       title="TIFF to JPG Converter"
       subtitle="Convert TIFF files to JPG format. Free, browser-based, no upload required."
       features={_FEATURES}
       steps={_STEPS}
-      faqs={faqs}
+      faqs={_FAQS}
       seoText="Convert TIFF to JPG online for free. Transform TIFF to universally compatible JPEG in your browser. No uploads."
     >
       <div className="flex flex-col gap-6">

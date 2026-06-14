@@ -21,8 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'How many images can I add?', a: 'Multiple images; best results under 50.' },
-  { q: 'Are files uploaded?', a: 'No. PDF generation runs locally.' }
+  {
+    q: "What image formats can I compile into a PDF document?",
+    a: "You can upload and compile JPEG, PNG, WebP, GIF, SVG, BMP, and TIFF formats into a single, cohesive PDF document."
+  },
+  {
+    q: "Does this tool scale or stretch my images to fit standard page sizes?",
+    a: "By default, each page in the output PDF is sized to match the input image's native dimensions, preserving pixel resolution. You can also select standard layouts like A4 or US Letter in the page settings to standardize margins."
+  },
+  {
+    q: "Can I adjust the page margins and orientation of the images?",
+    a: "Yes. You can customize page margins (none, small, or large), select portrait or landscape orientations, and arrange whether images are centered or fit to the page."
+  },
+  {
+    q: "Can I reorder the images after uploading them?",
+    a: "Yes. You can drag and drop image thumbnails in the workspace grid to reorder pages before compiling the final PDF."
+  },
+  {
+    q: "Are my private images uploaded to a server to generate the PDF?",
+    a: "No. The PDF generation is done entirely locally in your web browser using client-side JavaScript. Your images are never sent over the internet."
+  },
+  {
+    q: "Is there a limit on the number of images I can combine?",
+    a: "There is no hard limit on the number of images. For optimal performance in browser memory, we recommend combining batches of 100 images or less at a time."
+  }
 ];
 
 export default function ImageToPdfPage() {
@@ -34,25 +56,6 @@ export default function ImageToPdfPage() {
   const toggleFaq = (index) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
-
-  const faqs = [
-    {
-      q: "What image formats are supported by this compiler?",
-      a: "Our free image-to-PDF compiler supports JPG, JPEG, PNG, and WebP formats."
-    },
-    {
-      q: "Are my images scaled or resized in the PDF?",
-      a: "No, each page in the output PDF is sized to match the input image's native resolution exactly, ensuring no distortion, stretching, or loss of clarity."
-    },
-    {
-      q: "Can I convert multiple images into a single PDF?",
-      a: "Yes! You can select and compile multiple images at once. They will be ordered sequentially in the final PDF file."
-    },
-    {
-      q: "Is my document data kept confidential?",
-      a: "Absolutely. All processing and PDF compilation run entirely client-side inside your browser, meaning your images are never sent to external servers."
-    }
-  ];
 
   // Manage object URLs lifetime safely to prevent memory leaks and premature revocation
   const prevPreviewsRef = useRef([]);

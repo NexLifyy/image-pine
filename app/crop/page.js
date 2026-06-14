@@ -21,9 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Can I crop to a specific aspect ratio?', a: 'Yes - choose from presets or enter custom dimensions.' },
-  { q: 'Does cropping affect quality?', a: 'No. The original resolution is preserved.' },
-  { q: 'Are files uploaded?', a: 'No. Everything runs locally.' }
+  {
+    q: "Can I crop to a specific aspect ratio?",
+    a: "Yes. You can choose from common aspect ratio presets like 1:1 (square), 16:9 (widescreen), 4:3, 3:2, or enter custom aspect ratio proportions. You can also select 'Free' to resize the crop box freely."
+  },
+  {
+    q: "Does cropping an image affect its resolution or quality?",
+    a: "Cropping simply cuts away the outer borders of the image without resizing or reselling the pixels. The cropped region retains its exact original resolution and clarity."
+  },
+  {
+    q: "What file formats does the general crop tool support?",
+    a: "You can upload JPEG, PNG, WebP, BMP, and SVG files. You can export the cropped result in your choice of JPEG, PNG, or WebP format."
+  },
+  {
+    q: "What happens to transparent backgrounds when I crop?",
+    a: "If you save as PNG or WebP, transparency is fully preserved. If you export as JPEG, transparent areas will automatically be filled with a solid white background."
+  },
+  {
+    q: "Are my files uploaded to a server to be cropped?",
+    a: "No. The cropping is performed 100% locally in your browser using standard HTML5 Canvas APIs. Your private image files are never sent to a server."
+  },
+  {
+    q: "Can I input exact pixel dimensions for my crop selection?",
+    a: "Yes. You can adjust the crop bounding box manually using the corner handles, or enter precise target width and height pixel values in the settings panel."
+  }
 ];
 
 export default function CropPage() {

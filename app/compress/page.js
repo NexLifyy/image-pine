@@ -20,10 +20,30 @@ const _STEPS = [
   { n: '3', title: 'Download', desc: 'Download your compressed image.' },
 ];
 const _FAQS = [
-  { q: 'How does compression work?', a: 'Canvas algorithms adjust quality and strip metadata to reduce size.' },
-  { q: 'Can I set a specific target size?', a: 'Yes - enter KB value and binary search compression hits it exactly.' },
-  { q: 'What formats are supported?', a: 'JPEG, PNG, and WebP.' },
-  { q: 'Are my files stored anywhere?', a: 'No. Compression runs entirely in your browser.' },
+  {
+    q: "How does the image compressor reduce file size?",
+    a: "The compressor adjusts the visual quality parameter for lossy formats (JPEG/WebP), optimizes canvas layouts, and strips unnecessary metadata. For PNGs, it scales down dimensions to successfully meet target file size limits."
+  },
+  {
+    q: "Can I set a specific target file size (like under 200 KB)?",
+    a: "Yes. You can toggle the target size setting and enter your desired target size in KB or MB. Our binary search optimization algorithm will automatically calculate the best quality levels to hit your target."
+  },
+  {
+    q: "What image file formats are supported for compression?",
+    a: "You can upload JPEG, PNG, and WebP images, and choose your preferred output format (JPEG, PNG, or WebP) during compression."
+  },
+  {
+    q: "Are my private images uploaded or stored on any server?",
+    a: "No, never. All compression, rendering, and calculation run entirely in your local browser sandbox. Your private files never leave your device."
+  },
+  {
+    q: "What happens to transparent backgrounds when converting PNG/WebP to JPEG?",
+    a: "Because the JPEG format does not support transparency (alpha channels), any transparent areas in your source image will automatically be filled with a solid white background."
+  },
+  {
+    q: "Why did my PNG image increase in size after compression?",
+    a: "PNG is a lossless format. If you choose PNG output and set the quality very high without reducing dimensions, the browser's default canvas exporter may generate an unoptimized file larger than your original. If this happens, our tool has a safeguard that automatically retains your original optimized file instead."
+  }
 ];
 
 const fmt = (bytes) => {

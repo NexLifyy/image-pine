@@ -22,8 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Is animation preserved?', a: 'When converting to still formats, the first frame is exported.' },
-  { q: 'Are files uploaded?', a: 'No. Everything runs in your browser.' }
+  {
+    q: "What does this GIF converter do?",
+    a: "It allows you to convert GIF files to other formats like JPG, PNG, or WebP."
+  },
+  {
+    q: "What happens to the animation frames when I convert a GIF?",
+    a: "Since formats like JPEG and PNG are static, the tool will extract and convert the first frame of the animation. If you convert to WebP, it will also generate a static WebP of the first frame."
+  },
+  {
+    q: "Can I extract all frames from an animated GIF?",
+    a: "This tool is designed for static format conversion (converting the first frame). For complete frame extraction, a dedicated GIF frame extractor tool is recommended."
+  },
+  {
+    q: "Are my GIF files uploaded to a server?",
+    a: "No, never. The file parsing, frame extraction, and rendering are done 100% locally in your web browser."
+  },
+  {
+    q: "Will the transparency of the GIF be kept?",
+    a: "Yes. If you choose PNG or WebP as the output format, the transparent background of the GIF frame will be preserved. If you choose JPEG, it will be filled with white."
+  },
+  {
+    q: "How do I adjust the output size of the converted GIF image?",
+    a: "You can adjust the quality slider for JPEG/WebP outputs, or specify target dimensions in the settings before downloading the converted static file."
+  }
 ];
 
 export default function GifConverterPage() {

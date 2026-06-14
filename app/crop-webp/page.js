@@ -21,8 +21,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Can I export as a different format?', a: 'Yes - choose JPEG, PNG or WebP as output.' },
-  { q: 'Are files uploaded?', a: 'No. All local.' }
+  {
+    q: "Can I crop transparent WebP images?",
+    a: "Yes. WebP supports full alpha transparency, and our cropper preserves transparent backgrounds perfectly during the cropping process."
+  },
+  {
+    q: "Can I convert my cropped WebP to another format?",
+    a: "Yes. You can change the 'Save As' format in the output settings to export your cropped WebP image as a JPG or PNG file."
+  },
+  {
+    q: "Will the image quality degrade after cropping a WebP?",
+    a: "No. WebP is cropped using canvas-level extraction which copies pixels directly. You can set the WebP quality slider to 100% to ensure lossless or near-lossless export."
+  },
+  {
+    q: "Does this tool support animated WebP files?",
+    a: "This tool is designed for static WebP images. If you upload an animated WebP, it will crop and export the first frame of the animation."
+  },
+  {
+    q: "Are my WebP files processed on a server?",
+    a: "No. The WebP decoding, canvas cropping, and encoding are done entirely in your browser client-side, ensuring complete privacy."
+  },
+  {
+    q: "Why should I choose WebP over JPG or PNG?",
+    a: "WebP offers superior compression. Cropping and saving in WebP keeps your image file size significantly smaller than PNG or JPEG while maintaining comparable quality."
+  }
 ];
 
 export default function CropWebpPage() {

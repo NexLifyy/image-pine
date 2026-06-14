@@ -22,8 +22,30 @@ const _STEPS = [
 ];
 
 const _FAQS = [
-  { q: 'Is transparency preserved?', a: 'Yes - WebP transparency maps to PNG alpha channel.' },
-  { q: 'Are files uploaded?', a: 'No. All processing is in-browser.' }
+  {
+    q: "Why should I convert WebP to PNG?",
+    a: "WebP is a highly compressed format that some legacy software and websites do not support. Converting WebP to PNG creates a widely compatible, lossless image file."
+  },
+  {
+    q: "Will the transparent background of my WebP image be kept in PNG?",
+    a: "Yes. PNG fully supports alpha transparency, and our converter preserves WebP transparency perfectly without adding black or white borders."
+  },
+  {
+    q: "Is the WebP to PNG conversion process lossless?",
+    a: "Yes. PNG is a lossless format, so converting from WebP to PNG will not degrade the quality of the image. The exact pixel values are preserved."
+  },
+  {
+    q: "Are my WebP files uploaded to any server?",
+    a: "No, never. All WebP decoding and PNG encoding run entirely client-side in your web browser."
+  },
+  {
+    q: "Can I batch convert multiple WebP images to PNG?",
+    a: "Yes. You can upload multiple WebP files to convert them all in a batch. You can download the results individually or in a packaged .zip archive."
+  },
+  {
+    q: "Can I resize my WebP image while converting it to PNG?",
+    a: "Yes. You can specify custom width and height dimensions in the settings to resize the output PNG image."
+  }
 ];
 
 export default function WebpToPngPage() {

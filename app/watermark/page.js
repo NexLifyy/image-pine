@@ -295,9 +295,30 @@ export default function WatermarkPage() {
   ];
 
   const _FAQS = [
-    { q: 'How does bulk watermarking work?', a: 'Upload multiple files together. The template settings you define are projected onto all files simultaneously, keeping formatting and dimensions proportional.' },
-    { q: 'What is a Tiled Watermark?', a: 'Tiling repeats your text pattern in a grid over the entire photo canvas. This is highly effective at stopping others from cropping or using automated tools to extract the visual contents.' },
-    { q: 'Can I select a custom download format?', a: 'Yes. You can preserve the original format or convert your results to JPG, PNG, or WebP upon bulk export.' }
+    {
+      q: "How does the bulk watermarking process work?",
+      a: "You can upload multiple files at once. The watermark template (whether text or logo) you design is applied across all files in the batch, adapting proportionally to each photo's size."
+    },
+    {
+      q: "What is a Tiled Watermark and when should I use it?",
+      a: "Tiling repeats your watermark logo or text in a diagonal grid across the entire canvas. This is highly effective at preventing people from cropping out logo watermarks or using AI editors to erase them."
+    },
+    {
+      q: "Can I upload a custom image or logo as my watermark?",
+      a: "Yes. You can choose the 'Image Logo' watermark type and upload a PNG brand asset with transparent backgrounds, then adjust its opacity, scale, and placement position."
+    },
+    {
+      q: "Are my private photos and brand logos uploaded to a server?",
+      a: "No. The watermarking algorithms run entirely locally in your web browser using HTML5 Canvas rendering. Your private photos and assets never leave your machine."
+    },
+    {
+      q: "Can I customize the text watermark font style, color, and opacity?",
+      a: "Yes. You can enter custom text, select font sizes, pick colors, adjust opacity levels (from solid to faint), and choose alignment placements or grid tiling."
+    },
+    {
+      q: "How do I download the watermarked images?",
+      a: "You can download the watermarked images individually from the workspace preview, or download all files at once packaged in a single, organized .zip archive."
+    }
   ];
 
   useEffect(() => {
