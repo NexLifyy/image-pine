@@ -57,7 +57,6 @@ export default function SvgConverterPage() {
   const [resizeMode, setResizeMode] = useState('keep'); // 'keep' | 'custom'
   const [customWidth, setCustomWidth] = useState('');
   const [customHeight, setCustomHeight] = useState('');
-  const [transparentColor, setTransparentColor] = useState('');
   const [autoOrient, setAutoOrient] = useState(true);
   const [stripMetadata, setStripMetadata] = useState(true);
   const [gifAlignment, setGifAlignment] = useState('');
@@ -159,32 +158,7 @@ export default function SvgConverterPage() {
         // Draw SVG onto canvas
         ctx.drawImage(img, 0, 0, w, h);
 
-        // Transparency color keyer for transparent formats
-        if (transparentColor && (targetFormat === 'image/png' || targetFormat === 'image/webp' || targetFormat === 'image/gif' || targetFormat === 'image/bmp')) {
-          const hex = transparentColor.replace('#', '');
-          const rMatch = parseInt(hex.substring(0, 2), 16);
-          const gMatch = parseInt(hex.substring(2, 4), 16);
-          const bMatch = parseInt(hex.substring(4, 6), 16);
-          
-          if (!isNaN(rMatch) && !isNaN(gMatch) && !isNaN(bMatch)) {
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imgData.data;
-            const tolerance = 20;
-            for (let i = 0; i < data.length; i += 4) {
-              const r = data[i];
-              const g = data[i+1];
-              const b = data[i+2];
-              if (
-                Math.abs(r - rMatch) < tolerance &&
-                Math.abs(g - gMatch) < tolerance &&
-                Math.abs(b - bMatch) < tolerance
-              ) {
-                data[i+3] = 0;
-              }
-            }
-            ctx.putImageData(imgData, 0, 0);
-          }
-        }
+
 
         const mimeParam = targetFormat === 'image/x-icon' ? 'image/png' : targetFormat;
         const qualityParam = (targetFormat === 'image/jpeg' || targetFormat === 'image/webp') ? (quality / 100) : undefined;
@@ -229,7 +203,7 @@ export default function SvgConverterPage() {
     return () => {
       active = false;
     };
-  }, [file, targetFormat, quality, resizeMode, customWidth, customHeight, transparentColor, icoFavicon, icoSize]);
+  }, [file, targetFormat, quality, resizeMode, customWidth, customHeight, icoFavicon, icoSize]);
 
   // Clean up object URLs on unmount
   useEffect(() => {
@@ -473,27 +447,7 @@ export default function SvgConverterPage() {
                       </div>
                     )}
 
-                    {/* Transparency option for supported outputs */}
-                    {(targetFormat === 'image/png' || targetFormat === 'image/webp' || targetFormat === 'image/gif' || targetFormat === 'image/bmp') && (
-                      <div>
-                        <label className="block text-xs font-bold text-textmain mb-1">Choose a color to make transparent?</label>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="color" 
-                            value={transparentColor || '#ffffff'} 
-                            onChange={(e) => setTransparentColor(e.target.value)}
-                            className="h-8 w-8 border rounded cursor-pointer bg-transparent"
-                          />
-                          <input 
-                            type="text" 
-                            placeholder="#FFFFFF" 
-                            value={transparentColor} 
-                            onChange={(e) => setTransparentColor(e.target.value)}
-                            className="w-full text-xs border rounded px-2 py-1"
-                          />
-                        </div>
-                      </div>
-                    )}
+
 
                     {/* GIF Alignment option */}
                     {targetFormat === 'image/gif' && (

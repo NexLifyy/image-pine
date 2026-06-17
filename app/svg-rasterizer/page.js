@@ -90,38 +90,51 @@ export default function SvgRasterizerPage() {
     }
   ];
 
+  // Revoke previewUrl on change/unmount to prevent memory leaks
   useEffect(() => {
-    if (svgText) {
-      // Create local object URL for previewing
-      const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      setPreviewUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
-  }, [svgText]);
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const handleFileSelect = (files) => {
     if (!files || files.length === 0) return;
     const selected = files[0];
     setFile(selected);
     setSvgText('');
-    setPreviewUrl('');
+    
+    // Revoke old previewUrl if any
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    // Set initial preview URL directly from the file object
+    const tempUrl = URL.createObjectURL(selected);
+    setPreviewUrl(tempUrl);
 
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target.result;
       setSvgText(text);
-      parseSvgDimensions(text);
+      
+      // Parse dimensions and sanitize/clean the SVG markup
+      const cleanUrl = parseSvgDimensionsAndClean(text, selected, tempUrl);
+      if (cleanUrl) {
+        setPreviewUrl(cleanUrl);
+      }
     };
     reader.readAsText(selected);
   };
 
-  const parseSvgDimensions = (xmlText) => {
+  const parseSvgDimensionsAndClean = (xmlText, originalFile, currentUrl) => {
     try {
       const parser = new DOMParser();
-      const doc = parser.parseFromString(xmlText, 'image/svg+xml');
+      // Use 'text/html' for parsing to handle namespaces and broken tags gracefully
+      const doc = parser.parseFromString(xmlText, 'text/html');
       const svg = doc.querySelector('svg');
-      if (!svg) return;
+      if (!svg) return null;
 
       let w = parseFloat(svg.getAttribute('width'));
       let h = parseFloat(svg.getAttribute('height'));
@@ -146,8 +159,25 @@ export default function SvgRasterizerPage() {
       setHeightInput(Math.round(h).toString());
       setAspectRatio(w / h);
       setScaleMultiplier(1);
+
+      // Verify or inject the xmlns namespace attribute
+      if (!svg.getAttribute('xmlns')) {
+        svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      }
+
+      // Serialize back to standard, clean XML SVG
+      const serializer = new XMLSerializer();
+      const cleanText = serializer.serializeToString(svg);
+      const cleanBlob = new Blob([cleanText], { type: 'image/svg+xml;charset=utf-8' });
+      const cleanUrl = URL.createObjectURL(cleanBlob);
+
+      // Revoke the temporary url as we now have a cleaner version
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+
+      return cleanUrl;
     } catch (e) {
-      console.error(e);
+      console.error("Error parsing and cleaning SVG:", e);
+      return null;
     }
   };
 
@@ -178,26 +208,43 @@ export default function SvgRasterizerPage() {
   };
 
   const handleRasterizeAndDownload = () => {
-    if (!svgText) return;
+    if (!file) return;
     setIsProcessing(true);
 
     const w = parseInt(widthInput, 10) || originalWidth;
     const h = parseInt(heightInput, 10) || originalHeight;
 
-    // To prevent fuzzy rendering, we modify the SVG source temporarily, setting the width and height attributes explicitly
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgText, 'image/svg+xml');
-    const svg = doc.querySelector('svg');
-    if (svg) {
-      svg.setAttribute('width', w.toString());
-      svg.setAttribute('height', h.toString());
+    let url;
+    let isBlobCreated = false;
+
+    try {
+      if (svgText) {
+        // To prevent fuzzy rendering, we modify the SVG source temporarily, setting the width and height attributes explicitly
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svgText, 'image/svg+xml');
+        const parserError = doc.querySelector('parsererror');
+        const svg = doc.querySelector('svg');
+        
+        if (svg && !parserError) {
+          svg.setAttribute('width', w.toString());
+          svg.setAttribute('height', h.toString());
+          
+          const serializer = new XMLSerializer();
+          const modifiedSvgText = serializer.serializeToString(doc);
+          const svgBlob = new Blob([modifiedSvgText], { type: 'image/svg+xml;charset=utf-8' });
+          url = URL.createObjectURL(svgBlob);
+          isBlobCreated = true;
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to parse and modify SVG XML, falling back to original file:", e);
     }
 
-    const serializer = new XMLSerializer();
-    const modifiedSvgText = serializer.serializeToString(doc);
-
-    const svgBlob = new Blob([modifiedSvgText], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
+    // Fallback to the original file URL if XML modification failed or was skipped
+    if (!url) {
+      url = URL.createObjectURL(file);
+      isBlobCreated = true;
+    }
 
     const img = new Image();
     img.onload = () => {
@@ -235,18 +282,18 @@ export default function SvgRasterizerPage() {
             saveHistory('SVG Rasterizer', `${file.name} converted to ${saveFormat.toUpperCase()} (${w}x${h})`);
           }
           setIsProcessing(false);
-          URL.revokeObjectURL(url);
+          if (isBlobCreated) URL.revokeObjectURL(url);
         }, mime, 0.95);
       } catch (err) {
         console.error(err);
         setIsProcessing(false);
-        URL.revokeObjectURL(url);
+        if (isBlobCreated) URL.revokeObjectURL(url);
       }
     };
     img.onerror = () => {
       setIsProcessing(false);
-      URL.revokeObjectURL(url);
-      alert('Failed to parse vector elements for high-resolution rendering.');
+      if (isBlobCreated) URL.revokeObjectURL(url);
+      alert('Failed to parse vector elements for rendering.');
     };
     img.src = url;
   };
@@ -315,17 +362,39 @@ export default function SvgRasterizerPage() {
             }}>
               {previewUrl && (
                 <div style={{
-                  maxWidth: '100%', maxHeight: 480, display: 'inline-block',
+                  maxWidth: '100%',
+                  maxHeight: 480,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   background: bgType === 'solid' ? bgColor : 'transparent',
-                  padding: 10, borderRadius: 8, border: bgType === 'solid' ? '1px solid #E4E4EF' : 'none',
+                  padding: 10,
+                  borderRadius: 8,
+                  border: bgType === 'solid' ? '1px solid #E4E4EF' : 'none',
                   boxShadow: '0 4px 16px rgba(0,0,0,0.06)'
                 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={previewUrl}
-                    alt="Vector View"
-                    style={{ maxWidth: '100%', maxHeight: 440, objectFit: 'contain', display: 'block' }}
-                  />
+                  <object
+                    data={previewUrl}
+                    type="image/svg+xml"
+                    width="100%"
+                    height="100%"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: 440,
+                      objectFit: 'contain',
+                      display: 'block',
+                      pointerEvents: 'none',
+                      border: 'none',
+                      outline: 'none'
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={previewUrl}
+                      alt="Vector View"
+                      style={{ maxWidth: '100%', maxHeight: 440, objectFit: 'contain', display: 'block' }}
+                    />
+                  </object>
                 </div>
               )}
             </div>

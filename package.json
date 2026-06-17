@@ -16,6 +16,7 @@
     "exifreader": "^4.41.0",
     "file-saver": "^2.0.5",
     "gifshot": "^0.4.5",
+    "gifuct-js": "^2.1.2",
     "heic2any": "^0.0.4",
     "jszip": "^3.10.1",
     "next": "14.2.35",
