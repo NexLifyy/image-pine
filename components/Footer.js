@@ -92,6 +92,7 @@ export default function Footer() {
           {/* Policy Links Wrapper */}
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-6 order-1 lg:order-2">
             <div className="flex items-center gap-4 flex-wrap justify-start">
+              <a href="/about" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, textDecoration: 'none', transition: 'color 0.15s' }} className="hover:text-[#111128]">{t('About Us')}</a>
               <a href="/contact" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, textDecoration: 'none', transition: 'color 0.15s' }} className="hover:text-[#111128]">{t('Contact Us')}</a>
               <a href="/privacy" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, textDecoration: 'none', transition: 'color 0.15s' }} className="hover:text-[#111128]">{t('Privacy Policy')}</a>
               <a href="/terms" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, textDecoration: 'none', transition: 'color 0.15s' }} className="hover:text-[#111128]">{t('Terms of Service')}</a>

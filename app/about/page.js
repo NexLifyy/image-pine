@@ -69,7 +69,7 @@ export default function AboutPage() {
             maxWidth: 580,
             margin: '0 auto'
           }}>
-            We believe image editing should be fast, accessible, and completely private. <span className="notranslate">ImagePine</span> runs entirely in your browser—your files never leave your device.
+            We believe image editing should be fast, accessible, and completely private. <span className="notranslate">ImagePine</span> runs entirely in your browser, and your files never leave your device.
           </p>
         </section>
 
@@ -141,6 +141,22 @@ export default function AboutPage() {
               </p>
             </div>
           </div>
+
+          <div style={{ height: 1, background: '#E4E4EF', margin: '16px 0' }} />
+
+          {/* Our Story */}
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: '#111128', margin: 0, letterSpacing: '-0.01em' }}>
+            Our Story
+          </h2>
+          <p style={{ fontSize: 14, color: '#6B6B8A', lineHeight: 1.7, margin: 0 }}>
+            ImagePine started with a simple observation: the web had plenty of image editors, converters, and PDF tools, but nearly all of them forced users to upload files to a remote server. This felt slow, wasted internet bandwidth, and raised serious privacy concerns, especially when processing sensitive documents, IDs, or proprietary designs.
+          </p>
+          <p style={{ fontSize: 14, color: '#6B6B8A', lineHeight: 1.7, margin: 0 }}>
+            We set out to build a platform that did things differently. By utilizing modern web capabilities like WebAssembly, HTML5 APIs, and client-side processing, we created a suite of tools where your data never leaves your device. ImagePine was designed to be a developer-friendly, designer-approved, and privacy-conscious utility that is 100% free and runs entirely locally.
+          </p>
+          <p style={{ fontSize: 14, color: '#6B6B8A', lineHeight: 1.7, margin: 0 }}>
+            Today, we continue to expand our features, from bulk resizing to client-side OCR and metadata cleaning, all while staying true to our core mission of providing premium-tier tools with zero compromises on privacy.
+          </p>
 
           <div style={{ height: 1, background: '#E4E4EF', margin: '16px 0' }} />
 
