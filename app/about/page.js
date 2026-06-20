@@ -168,10 +168,15 @@ export default function AboutPage() {
             <span className="notranslate">ImagePine</span> leverages high-efficiency algorithms that run inside your browser. Here is a look at the technologies we use to provide offline-capable, studio-grade processing:
           </p>
           <ul style={{ paddingLeft: 20, margin: 0, display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: '#6B6B8A', lineHeight: 1.6 }}>
-            <li><strong>HTML5 Canvas 2D API:</strong> Powers high-quality pixel resampling, flipping, and rotational transforms.</li>
-            <li><strong>Native Web Compression:</strong> Employs client-side file compression algorithms for optimal file size reduction without sacrificing visual fidelity.</li>
-            <li><strong>Wasm/HEIF Parsers:</strong> Decodes advanced formats like HEIC directly inside your sandbox memory structure.</li>
-            <li><strong>Client-Side PDF Generation:</strong> Assembles complex multi-page document PDFs dynamically without ever pinging a web service.</li>
+            <li><strong>HTML5 Canvas & WebGL:</strong> Powers high-quality pixel resampling, cropping, rotational flips, filters, and watermark overlay renders.</li>
+            <li><strong>WebAssembly & HEIF/TIFF Decoders:</strong> Runs binary-compiled decoders in the browser to translate advanced HEIC, AVIF, and multi-page TIFF formats.</li>
+            <li><strong>Client-Side PDF Compiler (<code>pdf-lib</code>):</strong> Reconstructs, compresses, reorders, and exports multi-page document PDFs dynamically without server requests.</li>
+            <li><strong>LZW GIF Engine & Disposal Renderer (<code>gifuct-js</code> / <code>gifshot</code>):</strong> Decodes raw frame byte arrays, handles pixel disposal, and compiles frames back into animated GIFs.</li>
+            <li><strong>Local OCR Engine (<code>tesseract.js</code>):</strong> Runs optical character recognition client-side to extract text from images in dozens of languages.</li>
+            <li><strong>Local ZIP Archiver (<code>jszip</code>):</strong> Packages bulk-resized, renamed, or converted files into clean, download-ready ZIP files instantly.</li>
+            <li><strong>EXIF Metadata Reader (<code>exifreader</code>):</strong> Inspects and strips photo headers, camera tags, and GPS coordinates directly from file byte arrays.</li>
+            <li><strong>QR & Barcode Generation (<code>qrcode</code>):</strong> Assembles and renders high-density vector QR codes and ISBN barcodes directly in your browser.</li>
+            <li><strong>Color Palette Quantization:</strong> Extracts dominant color palettes from uploaded images locally using client-side color clustering algorithms.</li>
           </ul>
         </div>
       </div>

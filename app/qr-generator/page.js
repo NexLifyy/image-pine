@@ -6,6 +6,7 @@ import { saveAs } from 'file-saver';
 import { saveHistory } from '@/lib/storage';
 import ToolPageShell from '@/components/ToolPageShell';
 import QRCode from 'qrcode';
+import { useLanguage } from '@/lib/LanguageContext';
 
 // EAN-13 specification patterns for standard book barcodes
 const L_AND_G_PATTERNS = {
@@ -69,27 +70,32 @@ const generateEan13Bitstring = (digits) => {
   return bitstring;
 };
 
-const drawEan13BarcodeOnCanvas = (canvas, digits, darkColor, lightColor) => {
+const drawEan13BarcodeOnCanvas = (canvas, digits, darkColor, lightColor, targetWidth = 400) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   
-  const canvasW = 400;
-  const canvasH = 260;
+  const scale = targetWidth / 400;
+  const canvasW = targetWidth;
+  const canvasH = Math.round(260 * scale);
   canvas.width = canvasW;
   canvas.height = canvasH;
   
   // Fill background
-  ctx.fillStyle = lightColor;
-  ctx.fillRect(0, 0, canvasW, canvasH);
+  if (lightColor && lightColor !== 'transparent' && lightColor !== '#00000000') {
+    ctx.fillStyle = lightColor;
+    ctx.fillRect(0, 0, canvasW, canvasH);
+  } else {
+    ctx.clearRect(0, 0, canvasW, canvasH);
+  }
   
   const bitstring = generateEan13Bitstring(digits);
   
-  const moduleW = 3;
+  const moduleW = 3 * scale;
   const barcodeW = 95 * moduleW;
   const startX = Math.round((canvasW - barcodeW) / 2);
-  const startY = 35;
-  const regularH = 130;
-  const guardH = 150;
+  const startY = 35 * scale;
+  const regularH = 130 * scale;
+  const guardH = 150 * scale;
   
   ctx.fillStyle = darkColor;
   
@@ -104,23 +110,23 @@ const drawEan13BarcodeOnCanvas = (canvas, digits, darkColor, lightColor) => {
   
   // Draw text digits
   ctx.fillStyle = darkColor;
-  ctx.font = 'bold 16px monospace';
+  ctx.font = `bold ${Math.round(16 * scale)}px monospace`;
   ctx.textBaseline = 'top';
   
   // First digit (outside left)
   ctx.textAlign = 'right';
-  ctx.fillText(digits[0], startX - 10, startY + regularH + 5);
+  ctx.fillText(digits[0], startX - 10 * scale, startY + regularH + 5 * scale);
   
   // Left 6 digits
   ctx.textAlign = 'center';
   const leftGroupX = startX + (3 + 21) * moduleW;
   const leftStr = digits.slice(1, 7).join('');
-  ctx.fillText(leftStr, leftGroupX, startY + regularH + 5);
+  ctx.fillText(leftStr, leftGroupX, startY + regularH + 5 * scale);
   
   // Right 6 digits
   const rightGroupX = startX + (50 + 21) * moduleW;
   const rightStr = digits.slice(7, 13).join('');
-  ctx.fillText(rightStr, rightGroupX, startY + regularH + 5);
+  ctx.fillText(rightStr, rightGroupX, startY + regularH + 5 * scale);
 };
 
 const _FEATURES = [
@@ -166,6 +172,7 @@ const _FAQS = [
 ];
 
 export default function QrGeneratorPage() {
+  const { t } = useLanguage();
   const [mode, setMode] = useState('qr'); // 'qr' | 'isbn'
   const [text, setText] = useState('https://imagepine.com');
   const [isbn, setIsbn] = useState('978-3-16-148410-0');
@@ -175,6 +182,9 @@ export default function QrGeneratorPage() {
   const [logoFile, setLogoFile] = useState(null);
   const [logoScale, setLogoScale] = useState(20); // percent (10-30)
   const [logoPadding, setLogoPadding] = useState(6); // px padding around logo
+  
+  const [exportFormat, setExportFormat] = useState('png'); // 'png' | 'jpg'
+  const [exportSize, setExportSize] = useState(1000); // 400 | 800 | 1600 | 3200
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -190,118 +200,159 @@ export default function QrGeneratorPage() {
     }
   };
 
-  const drawQrCode = () => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    
-    QRCode.toCanvas(canvas, text || ' ', {
-      width: 400,
-      margin: 2,
-      errorCorrectionLevel: 'H',
-      color: {
-        dark: darkColor,
-        light: lightColor
-      }
-    }, (err) => {
-      if (err) {
-        console.error(err);
-        setErrorMsg('Failed to generate QR Code. Adjust your text length.');
-        return;
-      }
+  const drawQrCode = (targetCanvas, targetWidth, isTransparent) => {
+    return new Promise((resolve, reject) => {
+      if (!targetCanvas) return reject('No canvas');
+      const qrLightColor = isTransparent ? '#00000000' : lightColor;
+      
+      QRCode.toCanvas(targetCanvas, text || ' ', {
+        width: targetWidth,
+        margin: 2,
+        errorCorrectionLevel: 'H',
+        color: {
+          dark: darkColor,
+          light: qrLightColor
+        }
+      }, (err) => {
+        if (err) {
+          setErrorMsg(t('Failed to generate QR Code. Adjust your text length.'));
+          return reject(err);
+        }
 
-      if (logoFile) {
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        if (logoFile) {
+          const ctx = targetCanvas.getContext('2d');
+          if (!ctx) return resolve();
 
-        const img = new Image();
-        img.onload = () => {
-          const qrSize = canvas.width;
-          const maxLogoSize = qrSize * (logoScale / 100);
-          
-          let logoW = img.naturalWidth || img.width;
-          let logoH = img.naturalHeight || img.height;
-          if (logoW > logoH) {
-            logoH = (logoH / logoW) * maxLogoSize;
-            logoW = maxLogoSize;
-          } else {
-            logoW = (logoW / logoH) * maxLogoSize;
-            logoH = maxLogoSize;
-          }
+          const img = new Image();
+          img.onload = () => {
+            const qrSize = targetCanvas.width;
+            const maxLogoSize = qrSize * (logoScale / 100);
+            
+            let logoW = img.naturalWidth || img.width;
+            let logoH = img.naturalHeight || img.height;
+            if (logoW > logoH) {
+              logoH = (logoH / logoW) * maxLogoSize;
+              logoW = maxLogoSize;
+            } else {
+              logoW = (logoW / logoH) * maxLogoSize;
+              logoH = maxLogoSize;
+            }
 
-          const x = (qrSize - logoW) / 2;
-          const y = (qrSize - logoH) / 2;
+            const x = (qrSize - logoW) / 2;
+            const y = (qrSize - logoH) / 2;
 
-          ctx.fillStyle = lightColor;
-          ctx.fillRect(
-            x - logoPadding, 
-            y - logoPadding, 
-            logoW + logoPadding * 2, 
-            logoH + logoPadding * 2
-          );
+            ctx.fillStyle = lightColor === 'transparent' || lightColor === '#00000000' ? '#FFFFFF' : lightColor;
+            const scaledPadding = logoPadding * (targetWidth / 400);
+            ctx.fillRect(
+              x - scaledPadding, 
+              y - scaledPadding, 
+              logoW + scaledPadding * 2, 
+              logoH + scaledPadding * 2
+            );
 
-          ctx.drawImage(img, x, y, logoW, logoH);
-        };
-        img.src = logoFile.preview || URL.createObjectURL(logoFile);
-      }
+            ctx.drawImage(img, x, y, logoW, logoH);
+            resolve();
+          };
+          img.onerror = () => {
+            reject('Failed to load logo image');
+          };
+          img.src = logoFile.preview || URL.createObjectURL(logoFile);
+        } else {
+          resolve();
+        }
+      });
     });
   };
 
-  const drawIsbnBarcode = () => {
-    if (!canvasRef.current) return;
-    
-    const cleanDigits = isbn.replace(/\D/g, '');
-    setIsbnInfo('');
-    
-    if (cleanDigits.length < 12) {
-      setErrorMsg('Please enter at least 12 digits for the ISBN.');
-      const ctx = canvasRef.current.getContext('2d');
-      ctx.fillStyle = lightColor;
-      ctx.fillRect(0, 0, canvasRef.current.width || 400, canvasRef.current.height || 260);
-      return;
-    }
-
-    const digitsArr = cleanDigits.slice(0, 12).split('').map(Number);
-    const correctCheckDigit = calculateEan13CheckDigit(digitsArr);
-    const finalDigits = [...digitsArr, correctCheckDigit];
-    
-    if (cleanDigits.length === 12) {
-      setIsbnInfo(`Auto-computed check digit: ${correctCheckDigit} (ISBN-13: ${digitsArr.join('')}${correctCheckDigit})`);
-    } else if (cleanDigits.length >= 13) {
-      const userCheckDigit = parseInt(cleanDigits[12], 10);
-      if (userCheckDigit === correctCheckDigit) {
-        setIsbnInfo('✓ Valid ISBN-13 checksum');
-      } else {
-        setIsbnInfo(`⚠ Last digit should be ${correctCheckDigit} (auto-fixed on barcode)`);
+  const drawIsbnBarcode = (targetCanvas, targetWidth, isTransparent) => {
+    return new Promise((resolve) => {
+      const cleanDigits = isbn.replace(/\D/g, '');
+      setIsbnInfo('');
+      
+      if (cleanDigits.length < 12) {
+        setErrorMsg(t('Please enter at least 12 digits for the ISBN.'));
+        const ctx = targetCanvas.getContext('2d');
+        ctx.clearRect(0, 0, targetCanvas.width || 400, targetCanvas.height || 260);
+        if (!isTransparent) {
+          ctx.fillStyle = lightColor;
+          ctx.fillRect(0, 0, targetCanvas.width || 400, targetCanvas.height || 260);
+        }
+        return resolve();
       }
-    }
 
-    drawEan13BarcodeOnCanvas(canvasRef.current, finalDigits, darkColor, lightColor);
+      const digitsArr = cleanDigits.slice(0, 12).split('').map(Number);
+      const correctCheckDigit = calculateEan13CheckDigit(digitsArr);
+      const finalDigits = [...digitsArr, correctCheckDigit];
+      
+      if (targetCanvas === canvasRef.current) {
+        if (cleanDigits.length === 12) {
+          setIsbnInfo(`${t('Auto-computed check digit')}: ${correctCheckDigit} (ISBN-13: ${digitsArr.join('')}${correctCheckDigit})`);
+        } else if (cleanDigits.length >= 13) {
+          const userCheckDigit = parseInt(cleanDigits[12], 10);
+          if (userCheckDigit === correctCheckDigit) {
+            setIsbnInfo(`✓ ${t('Valid ISBN-13 checksum')}`);
+          } else {
+            setIsbnInfo(`⚠ ${t('Last digit should be')} ${correctCheckDigit} (${t('auto-fixed on barcode')})`);
+          }
+        }
+      }
+
+      const barLightColor = isTransparent ? '#00000000' : lightColor;
+      drawEan13BarcodeOnCanvas(targetCanvas, finalDigits, darkColor, barLightColor, targetWidth);
+      resolve();
+    });
   };
 
   const drawOutput = () => {
     setErrorMsg('');
+    const isTransparent = exportFormat === 'png';
     if (mode === 'qr') {
-      drawQrCode();
+      drawQrCode(canvasRef.current, 400, isTransparent).catch((err) => {
+        console.error(err);
+      });
     } else {
-      drawIsbnBarcode();
+      drawIsbnBarcode(canvasRef.current, 400, isTransparent);
     }
   };
 
   useEffect(() => {
     drawOutput();
-  }, [mode, text, darkColor, lightColor, logoFile, logoScale, logoPadding, isbn]);
+  }, [mode, text, darkColor, lightColor, logoFile, logoScale, logoPadding, isbn, exportFormat]);
 
-  const downloadQrCode = () => {
+  const downloadQrCode = async () => {
     if (!canvasRef.current) return;
-    canvasRef.current.toBlob((blob) => {
-      if (blob) {
-        const name = mode === 'qr' ? 'qr_code.png' : 'isbn_barcode.png';
-        saveAs(blob, name);
-        saveHistory(mode === 'qr' ? 'QR Code' : 'ISBN Barcode', name);
+    setIsProcessing(true);
+    setErrorMsg('');
+    try {
+      const tempCanvas = document.createElement('canvas');
+      const isTransparent = exportFormat === 'png';
+      
+      if (mode === 'qr') {
+        await drawQrCode(tempCanvas, exportSize, isTransparent);
       } else {
-        setErrorMsg('Error generating PNG download.');
+        await drawIsbnBarcode(tempCanvas, exportSize, isTransparent);
       }
-    });
+      
+      const fileExtension = exportFormat;
+      const mimeType = exportFormat === 'png' ? 'image/png' : 'image/jpeg';
+      const fileName = mode === 'qr' 
+        ? `qr_code_${exportSize}px.${fileExtension}` 
+        : `isbn_barcode_${exportSize}px.${fileExtension}`;
+        
+      tempCanvas.toBlob((blob) => {
+        if (blob) {
+          saveAs(blob, fileName);
+          saveHistory(mode === 'qr' ? 'QR Code' : 'ISBN Barcode', fileName);
+        } else {
+          setErrorMsg(t('Error generating download.'));
+        }
+        setIsProcessing(false);
+      }, mimeType, exportFormat === 'jpg' ? 0.95 : undefined);
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(t('Failed to generate export file.'));
+      setIsProcessing(false);
+    }
   };
 
   const cardStyle = {
@@ -531,16 +582,55 @@ export default function QrGeneratorPage() {
             />
           </div>
 
-          <div style={{ paddingTop: 10, borderTop: '1px solid #F1F1F7' }}>
+          {/* Export Options */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, paddingBottom: 16, borderBottom: '1px solid #F1F1F7', marginBottom: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={sidebarLabel}>{t('Export Format')}</label>
+              <select
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value)}
+                style={{
+                  width: '100%', padding: '9px 12px', background: '#F7F7FB', border: '1px solid #E4E4EF', borderRadius: 9, fontSize: 12, fontWeight: 700, color: '#111128', outline: 'none', cursor: 'pointer'
+                }}
+              >
+                <option value="png">{t('Transparent PNG')}</option>
+                <option value="jpg">{t('JPG (Solid Background)')}</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={sidebarLabel}>{t('Export Size (Width)')}</label>
+              <select
+                value={exportSize}
+                onChange={(e) => setExportSize(parseInt(e.target.value))}
+                style={{
+                  width: '100%', padding: '9px 12px', background: '#F7F7FB', border: '1px solid #E4E4EF', borderRadius: 9, fontSize: 12, fontWeight: 700, color: '#111128', outline: 'none', cursor: 'pointer'
+                }}
+              >
+                <option value="400">400 px ({t('Original')})</option>
+                <option value="800">800 px ({t('Medium')})</option>
+                <option value="1600">1600 px ({t('Print / High-Res')})</option>
+                <option value="3200">3200 px ({t('Ultra-Res')})</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ paddingTop: 10 }}>
             <button
               type="button"
+              disabled={isProcessing}
               onClick={downloadQrCode}
-              style={{ width: "100%", padding: "13px", fontSize: 13, fontWeight: 800, borderRadius: 12, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #5B5BD6 0%, #7C3AED 100%)", color: "#fff", boxShadow: "0 4px 14px rgba(91,91,214,0.30)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "all 0.18s" }}
+              style={{ width: "100%", padding: "13px", fontSize: 13, fontWeight: 800, borderRadius: 12, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #5B5BD6 0%, #7C3AED 100%)", color: "#fff", boxShadow: "0 4px 14px rgba(91,91,214,0.30)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "all 0.18s", opacity: isProcessing ? 0.7 : 1 }}
             >
-              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Download Code PNG
+              {isProcessing ? (
+                <span>{t('Processing...')}</span>
+              ) : (
+                <>
+                  <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>{t('Download Code')} {exportFormat.toUpperCase()}</span>
+                </>
+              )}
             </button>
           </div>
         </div>
