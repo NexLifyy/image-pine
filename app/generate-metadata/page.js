@@ -72,8 +72,8 @@ const _FEATURES = [
         <line x1="12" y1="22.08" x2="12" y2="12" />
       </svg>
     ),
-    title: 'Gemini-Powered Vision',
-    desc: 'Uses Google Gemini\'s multimodal vision models to extract highly descriptive and relevant metadata tags from assets instantly.'
+    title: 'OpenRouter-Powered Vision',
+    desc: 'Uses OpenRouter\'s free multimodal vision models to extract highly descriptive and relevant metadata tags from your assets instantly.'
   },
   {
     icon: (
@@ -142,23 +142,23 @@ const _FEATURES = [
 ];
 
 const _STEPS = [
-  { n: '1', title: 'Save API Keys & Upload', desc: 'Add your Google Gemini API key, save it to cookies, and upload up to 500 files.' },
+  { n: '1', title: 'Save API Keys & Upload', desc: 'Add your free OpenRouter API key, save it to cookies, and upload up to 500 files.' },
   { n: '2', title: 'Set Rules & Generate', desc: 'Choose your desired title length, keyword formats, and trigger the batch generator.' },
   { n: '3', title: 'Edit & Download CSV', desc: 'Verify and refine results directly in the app, then download the structured CSV file.' }
 ];
 
 const _FAQS = [
   {
-    q: "Where do I find my Gemini API key?",
-    a: "You can create and manage API keys for free by visiting Google AI Studio (aistudio.google.com/apikey). No credit card required — just sign in with your Google account."
+    q: "Where do I find my OpenRouter API key?",
+    a: "You can create a free API key at openrouter.ai/keys. No credit card required — just sign up and generate a key instantly."
   },
   {
     q: "How does the fallback key rotation work?",
-    a: "Gemini API keys have rate limits (15 requests/min on the free tier). By providing up to 3 keys, if key 1 hits an HTTP 429 error, the tool automatically rotates to key 2, then key 3, keeping your batch runs uninterrupted."
+    a: "OpenRouter free models allow up to 20 requests/min. By providing up to 3 keys, if key 1 hits an HTTP 429 error, the tool automatically rotates to key 2, then key 3, keeping your batch runs uninterrupted."
   },
   {
-    q: "Are my files stored on Google?",
-    a: "No, Google Gemini does not store your files permanently; they are processed temporarily for metadata inference. Image Pine downscales image frames locally before uploading to conserve your bandwidth and API limits."
+    q: "Are my files stored on OpenRouter?",
+    a: "No, OpenRouter does not store your files permanently; they are processed temporarily for metadata inference. Image Pine downscales image frames locally before uploading to conserve your bandwidth and API limits."
   },
   {
     q: "Can I edit the generated titles and keywords before exporting?",
@@ -166,7 +166,7 @@ const _FAQS = [
   },
   {
     q: "What AI model is used for image analysis?",
-    a: "The generator uses Google's Gemini 2.0 Flash model by default, which excels at visual recognition, optical character reading, and generating accurate stock photo descriptions — with a generous free tier of 1,500 requests per day."
+    a: "The generator uses Llama 3.2 11B Vision Instruct (free) by default via OpenRouter, with automatic fallback to Llama 3.2 90B Vision and other free models if needed. All models are completely free with no daily quota cap."
   },
   {
     q: "How do I import the output CSV file into stock photo websites?",
@@ -206,7 +206,7 @@ const enforceDescLength = (desc, targetLength, keywords) => {
   return refinedDesc;
 };
 
-// Helper to construct Gemini API Prompt
+// Helper to construct OpenRouter API Prompt
 const buildPrompt = (settings) => {
   const { titleLength, descriptionLength, keywordFormat, keywordLength, includeKeywords, excludeKeywords } = settings;
 
@@ -385,20 +385,21 @@ const getResizedImageB64 = (fileObj) => {
   });
 };
 
-// API Call with 3-Key Fallback, Rotational Logic, and Cooldown Retry (Google Gemini API)
+// API Call with 3-Key Fallback, Rotational Logic, and Cooldown Retry (OpenRouter API)
 // shouldContinue: optional fn() => bool — if it returns false, cooldown is aborted
-const callGeminiApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, model, currentKeyIdx, onKeySwitch, shouldContinue) => {
+const callOpenRouterApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, model, currentKeyIdx, onKeySwitch, shouldContinue) => {
   const activeKeys = apiKeys.filter(k => k.trim() !== '');
   if (activeKeys.length === 0) {
     throw new Error("No API keys configured. Please configure at least one API key.");
   }
 
-  // Candidate Gemini models in priority order
+  // Candidate OpenRouter free vision models in priority order
   const candidateModels = [
     model,
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro'
+    'meta-llama/llama-3.2-11b-vision-instruct:free',
+    'meta-llama/llama-3.2-90b-vision-instruct:free',
+    'google/gemini-2.0-flash-exp:free',
+    'qwen/qwen2.5-vl-7b-instruct:free'
   ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
 
   const buildPayload = (currentModel) => ({
@@ -420,9 +421,14 @@ const callGeminiApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, mo
     max_tokens: 1500
   });
 
-  const tryFetch = async (key, payload) => fetch(`https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`, {
+  const tryFetch = async (key, payload) => fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${key}`,
+      'HTTP-Referer': 'https://imagepine.com',
+      'X-Title': 'Image Pine'
+    },
     body: JSON.stringify(payload)
   });
 
@@ -500,7 +506,7 @@ const callGeminiApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, mo
 
   // All keys are rate-limited — wait 60s then retry once
   const COOLDOWN = 60;
-  onKeySwitch?.(`⏳ All ${activeKeys.length} API key(s) are rate limited (429). Waiting ${COOLDOWN}s for Gemini limits to reset...`);
+  onKeySwitch?.(`⏳ All ${activeKeys.length} API key(s) are rate limited (429). Waiting ${COOLDOWN}s for OpenRouter limits to reset...`);
   for (let s = COOLDOWN; s > 0; s--) {
     if (shouldContinue && !shouldContinue()) {
       throw new Error('Generation stopped by user during cooldown.');
@@ -601,14 +607,14 @@ export default function GenerateMetadataPage() {
 
   const isGeneratingRef = useRef(false);
   const currentKeyIndexRef = useRef(0);
-  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
+  const [selectedModel, setSelectedModel] = useState('meta-llama/llama-3.2-11b-vision-instruct:free');
 
   // Load API keys from browser cookies on mount
   useEffect(() => {
-    const k1 = getCookie('gemini_key_1') || '';
-    const k2 = getCookie('gemini_key_2') || '';
-    const k3 = getCookie('gemini_key_3') || '';
-    const savedModel = getCookie('gemini_model') || 'gemini-2.0-flash';
+    const k1 = getCookie('openrouter_key_1') || '';
+    const k2 = getCookie('openrouter_key_2') || '';
+    const k3 = getCookie('openrouter_key_3') || '';
+    const savedModel = getCookie('openrouter_model') || 'meta-llama/llama-3.2-11b-vision-instruct:free';
     
     const loaded = [];
     if (k1) loaded.push(k1);
@@ -671,9 +677,9 @@ export default function GenerateMetadataPage() {
     setApiKeys(finalKeys);
 
     // Save to cookies
-    setCookie('gemini_key_1', finalKeys[0] || '', 365);
-    setCookie('gemini_key_2', finalKeys[1] || '', 365);
-    setCookie('gemini_key_3', finalKeys[2] || '', 365);
+    setCookie('openrouter_key_1', finalKeys[0] || '', 365);
+    setCookie('openrouter_key_2', finalKeys[1] || '', 365);
+    setCookie('openrouter_key_3', finalKeys[2] || '', 365);
     
     setIsSaved(true);
     setTestStatus('');
@@ -695,14 +701,16 @@ export default function GenerateMetadataPage() {
     addLog("Testing key 1 with simple ping...", "info");
 
     try {
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${firstKey}`
+          'Authorization': `Bearer ${firstKey}`,
+          'HTTP-Referer': 'https://imagepine.com',
+          'X-Title': 'Image Pine'
         },
         body: JSON.stringify({
-          model: selectedModel || 'gemini-2.0-flash',
+          model: selectedModel || 'meta-llama/llama-3.2-11b-vision-instruct:free',
           messages: [{ role: 'user', content: 'Ping' }],
           max_tokens: 5
         })
@@ -803,7 +811,7 @@ export default function GenerateMetadataPage() {
     const activeKeys = apiKeys.filter(k => k.trim() !== '');
     if (activeKeys.length === 0) {
       setShowConfig(true);
-      showToast("Please configure and save at least one Gemini API Key under 'API Configuration' first.", "warning");
+      showToast("Please configure and save at least one OpenRouter API Key under 'API Configuration' first.", "warning");
       return;
     }
 
@@ -869,8 +877,8 @@ export default function GenerateMetadataPage() {
           mimeType = res.mimeType;
         }
 
-        // Send API Request to Google Gemini
-        const { data, keyUsedIndex, modelUsed } = await callGeminiApiWithFallback(
+        // Send API Request to OpenRouter
+        const { data, keyUsedIndex, modelUsed } = await callOpenRouterApiWithFallback(
           b64,
           mimeType,
           prompt,
@@ -915,10 +923,10 @@ export default function GenerateMetadataPage() {
 
         addLog(`Successfully processed ${file.name} using ${modelUsed} (Key ${keyUsedIndex + 1})`, "success");
 
-        // 4s inter-image delay to stay within Gemini's 15 req/min free tier
+        // 3s inter-image delay to stay within OpenRouter's 20 req/min free tier
         const isLastFile = pendingFiles.indexOf(file) === pendingFiles.length - 1;
         if (!isLastFile && isGeneratingRef.current) {
-          await new Promise(r => setTimeout(r, 4000));
+          await new Promise(r => setTimeout(r, 3000));
         }
       } catch (err) {
         console.error(err);
@@ -1168,12 +1176,12 @@ export default function GenerateMetadataPage() {
   return (
     <ToolPageShell
       title="Generate Metadata"
-      subtitle="Instantly generate SEO tags, titles, and descriptions for your files using Google Gemini AI. Ideal for stock photography cataloging."
+      subtitle="Instantly generate SEO tags, titles, and descriptions for your files using free OpenRouter vision AI. Ideal for stock photography cataloging."
       features={_FEATURES}
       steps={_STEPS}
       faqs={_FAQS}
       seoTitle="AI Image Metadata Generator — Batch Generate Titles, Tags & Descriptions"
-      seoText="Free online client-side AI Metadata Generator. Batch generate search engine metadata tags, file descriptions, and titles for your portfolio using Google Gemini. Custom lengths, keyword rules, and local CSV downloads with total privacy."
+      seoText="Free online client-side AI Metadata Generator. Batch generate search engine metadata tags, file descriptions, and titles for your portfolio using OpenRouter free vision models. Custom lengths, keyword rules, and local CSV downloads with total privacy."
     >
       <div className="flex flex-col gap-6">
 
@@ -1192,7 +1200,7 @@ export default function GenerateMetadataPage() {
               <div>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111128', margin: 0 }}>API Configuration</h3>
                 <p style={{ fontSize: 11, color: '#9898B5', margin: '2px 0 0' }}>
-                  {numConfiguredKeys > 0 ? `${numConfiguredKeys} key${numConfiguredKeys > 1 ? 's' : ''} configured` : 'Enter Gemini API key to start'}
+                  {numConfiguredKeys > 0 ? `${numConfiguredKeys} key${numConfiguredKeys > 1 ? 's' : ''} configured` : 'Enter OpenRouter API key to start'}
                 </p>
               </div>
             </div>
@@ -1212,7 +1220,7 @@ export default function GenerateMetadataPage() {
           {showConfig && (
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F1F1F7', display: 'flex', flexDirection: 'column', gap: 14 }} className="animate-fade-in">
               <p style={{ fontSize: 12, color: '#6B6B8A', margin: 0, lineHeight: 1.5 }}>
-                Provide up to three Google Gemini API Keys. Keys are stored securely in browser cookies and sent directly to Google. If key 1 hits a rate limit (HTTP 429), rotation fallbacks will proceed to key 2, then key 3.
+                Provide up to three OpenRouter API Keys. Keys are stored securely in browser cookies and sent directly to OpenRouter. If key 1 hits a rate limit (HTTP 429), rotation fallbacks will proceed to key 2, then key 3.
               </p>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1223,7 +1231,7 @@ export default function GenerateMetadataPage() {
                         type={showKeys[idx] ? 'text' : 'password'}
                         value={key}
                         onChange={(e) => handleKeyChange(idx, e.target.value)}
-                        placeholder={`Gemini API Key ${idx + 1}`}
+                        placeholder={`OpenRouter API Key ${idx + 1}`}
                         style={{
                           width: '100%', padding: '9px 40px 9px 12px',
                           background: '#F7F7FB', border: '1px solid #E4E4EF',
@@ -1316,7 +1324,7 @@ export default function GenerateMetadataPage() {
                 )}
 
                 <a
-                  href="https://aistudio.google.com/apikey"
+                  href="https://openrouter.ai/keys"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -1847,7 +1855,7 @@ export default function GenerateMetadataPage() {
                       value={selectedModel}
                       onChange={(e) => {
                         setSelectedModel(e.target.value);
-                        setCookie('gemini_model', e.target.value, 365);
+                        setCookie('openrouter_model', e.target.value, 365);
                         addLog(`Preferred model changed to: ${e.target.value}`, "info");
                       }}
                       style={{
@@ -1863,9 +1871,10 @@ export default function GenerateMetadataPage() {
                         outline: 'none'
                       }}
                     >
-                      <option value="gemini-2.0-flash">Gemini 2.0 Flash (Default · Free)</option>
-                      <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fast · Free)</option>
-                      <option value="gemini-1.5-pro">Gemini 1.5 Pro (Best Quality)</option>
+                      <option value="meta-llama/llama-3.2-11b-vision-instruct:free">Llama 3.2 11B Vision (Default · Free)</option>
+                      <option value="meta-llama/llama-3.2-90b-vision-instruct:free">Llama 3.2 90B Vision (Better · Free)</option>
+                      <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (via OpenRouter · Free)</option>
+                      <option value="qwen/qwen2.5-vl-7b-instruct:free">Qwen 2.5 VL 7B Vision (Free)</option>
                     </select>
                   </div>
 
