@@ -100,7 +100,7 @@ export default function Footer() {
 
           {/* Copyright line */}
           <p className="order-2 lg:order-1" style={{ fontSize: 11, color: '#9898B5', fontWeight: 500, margin: 0 }}>
-            © {new Date().getFullYear()} <span className="notranslate">ImagePine</span>. {t('Built with 💜 by NexLifyy')}
+            © {new Date().getFullYear()} <span className="notranslate">ImagePine</span>. {t('A product by NexLifyy')}
           </p>
         </div>
       </div>
