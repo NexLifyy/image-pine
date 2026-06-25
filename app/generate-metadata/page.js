@@ -395,9 +395,10 @@ const callGrokApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, mode
   let index = currentKeyIdx % activeKeys.length;
   let attempts = 0;
 
-  // Compile a list of candidate models, starting with the requested one
+  // Candidate models in priority order — most reliable vision model first
   const candidateModels = [
     model,
+    'meta-llama/llama-4-maverick-17b-128e-instruct',
     'llama-3.2-11b-vision-preview',
     'llama-3.2-90b-vision-preview',
     'qwen/qwen3.6-27b'
@@ -407,19 +408,18 @@ const callGrokApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, mode
     const key = activeKeys[index];
     let success = false;
     let resultData = null;
-    let modelUsed = model || 'qwen/qwen3.6-27b';
+    let modelUsed = model || 'meta-llama/llama-4-maverick-17b-128e-instruct';
 
     // Try the candidate models in order for this key
     for (let mIdx = 0; mIdx < candidateModels.length; mIdx++) {
       const currentModel = candidateModels[mIdx];
       try {
-        const isReasoningModel = currentModel.includes('qwen') || currentModel.includes('deepseek');
         const payload = {
           model: currentModel,
           messages: [
             {
               role: 'system',
-              content: 'You are an AI assistant specialized in image analysis. You must output responses strictly in valid, raw JSON format matching the requested schema. Do not output any thinking tags, explanation, or markdown fences.'
+              content: 'You are an AI assistant that analyzes images. Respond ONLY with a raw JSON object — no markdown, no code fences, no explanations. Start your response with { and end with }.'
             },
             {
               role: 'user',
@@ -438,14 +438,8 @@ const callGrokApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, mode
             }
           ],
           temperature: 0.2,
-          response_format: { type: "json_object" },
-          max_completion_tokens: 1024
+          max_completion_tokens: 1500
         };
-
-        if (isReasoningModel) {
-          payload.reasoning_format = "hidden";
-          payload.reasoning_effort = "none";
-        }
 
         let response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
@@ -481,15 +475,24 @@ const callGrokApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, mode
 
         if (!response.ok) {
           const errText = await response.text();
-          // If it's a JSON validation error, let's try the next model
-          if (response.status === 400 && (errText.includes("json_validate_failed") || errText.includes("Failed to validate JSON"))) {
-            onKeySwitch?.(`Model ${currentModel} failed JSON validation. Trying fallback model...`);
+          // Any non-429 error from this model — try next fallback model
+          onKeySwitch?.(`Model ${currentModel} failed (Status ${response.status}). Trying fallback model...`);
+          if (mIdx < candidateModels.length - 1) {
             continue;
           }
           throw new Error(`API Error (Status ${response.status}): ${errText}`);
         }
 
         const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+        if (!content || content.trim() === '') {
+          // Model returned empty content — try next fallback
+          onKeySwitch?.(`Model ${currentModel} returned empty output. Trying fallback model...`);
+          if (mIdx < candidateModels.length - 1) {
+            continue;
+          }
+          throw new Error(`Model ${currentModel} returned an empty response.`);
+        }
         resultData = data;
         modelUsed = currentModel;
         success = true;
@@ -599,14 +602,14 @@ export default function GenerateMetadataPage() {
 
   const isGeneratingRef = useRef(false);
   const currentKeyIndexRef = useRef(0);
-  const [selectedModel, setSelectedModel] = useState('qwen/qwen3.6-27b');
+  const [selectedModel, setSelectedModel] = useState('meta-llama/llama-4-maverick-17b-128e-instruct');
 
   // Load API keys from browser cookies on mount
   useEffect(() => {
     const k1 = getCookie('grok_key_1') || '';
     const k2 = getCookie('grok_key_2') || '';
     const k3 = getCookie('grok_key_3') || '';
-    const savedModel = getCookie('grok_model') || 'qwen/qwen3.6-27b';
+    const savedModel = getCookie('grok_model') || 'meta-llama/llama-4-maverick-17b-128e-instruct';
     
     const loaded = [];
     if (k1) loaded.push(k1);
@@ -1845,9 +1848,10 @@ export default function GenerateMetadataPage() {
                         outline: 'none'
                       }}
                     >
-                      <option value="qwen/qwen3.6-27b">Qwen 3.6 27B Vision (Default)</option>
+                      <option value="meta-llama/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick 17B Vision (Default)</option>
                       <option value="llama-3.2-11b-vision-preview">Llama 3.2 11B Vision (Fast)</option>
                       <option value="llama-3.2-90b-vision-preview">Llama 3.2 90B Vision (Detailed)</option>
+                      <option value="qwen/qwen3.6-27b">Qwen 3.6 27B Vision</option>
                     </select>
                   </div>
 
