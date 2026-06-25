@@ -72,8 +72,8 @@ const _FEATURES = [
         <line x1="12" y1="22.08" x2="12" y2="12" />
       </svg>
     ),
-    title: 'OpenRouter-Powered Vision',
-    desc: 'Uses OpenRouter\'s free multimodal vision models to extract highly descriptive and relevant metadata tags from your assets instantly.'
+    title: 'Groq-Powered Vision',
+    desc: 'Uses Groq\'s high-speed Llama 4 Scout multimodal vision model to extract highly descriptive and relevant metadata tags from your assets instantly.'
   },
   {
     icon: (
@@ -142,23 +142,23 @@ const _FEATURES = [
 ];
 
 const _STEPS = [
-  { n: '1', title: 'Save API Keys & Upload', desc: 'Add your free OpenRouter API key, save it to cookies, and upload up to 500 files.' },
+  { n: '1', title: 'Save API Keys & Upload', desc: 'Add your Groq API key, save it to cookies, and upload up to 500 files.' },
   { n: '2', title: 'Set Rules & Generate', desc: 'Choose your desired title length, keyword formats, and trigger the batch generator.' },
   { n: '3', title: 'Edit & Download CSV', desc: 'Verify and refine results directly in the app, then download the structured CSV file.' }
 ];
 
 const _FAQS = [
   {
-    q: "Where do I find my OpenRouter API key?",
-    a: "You can create a free API key at openrouter.ai/keys. No credit card required — just sign up and generate a key instantly."
+    q: "Where do I find my Groq API key?",
+    a: "You can create an API key at console.groq.com. Sign up and generate a key instantly."
   },
   {
     q: "How does the fallback key rotation work?",
-    a: "OpenRouter free models allow up to 20 requests/min. By providing up to 3 keys, if key 1 hits an HTTP 429 error, the tool automatically rotates to key 2, then key 3, keeping your batch runs uninterrupted."
+    a: "Groq API has strict rate limits. By providing up to 3 keys, if key 1 hits an HTTP 429 error, the tool automatically rotates to key 2, then key 3, keeping your batch runs uninterrupted."
   },
   {
-    q: "Are my files stored on OpenRouter?",
-    a: "No, OpenRouter does not store your files permanently; they are processed temporarily for metadata inference. Image Pine downscales image frames locally before uploading to conserve your bandwidth and API limits."
+    q: "Are my files stored on Groq?",
+    a: "No, Groq does not store your files permanently; they are processed temporarily for metadata inference. Image Pine downscales image frames locally before uploading to conserve your bandwidth and API limits."
   },
   {
     q: "Can I edit the generated titles and keywords before exporting?",
@@ -166,7 +166,7 @@ const _FAQS = [
   },
   {
     q: "What AI model is used for image analysis?",
-    a: "The generator uses Llama 3.2 11B Vision Instruct (free) by default via OpenRouter, with automatic fallback to Llama 3.2 90B Vision and other free models if needed. All models are completely free with no daily quota cap."
+    a: "The generator uses Llama 4 Scout 17B by default via Groq, with automatic fallback to other Groq vision models if needed."
   },
   {
     q: "How do I import the output CSV file into stock photo websites?",
@@ -387,20 +387,19 @@ const getResizedImageB64 = (fileObj) => {
 
 // API Call with 3-Key Fallback, Rotational Logic, and Cooldown Retry (OpenRouter API)
 // shouldContinue: optional fn() => bool — if it returns false, cooldown is aborted
-const callOpenRouterApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, model, currentKeyIdx, onKeySwitch, shouldContinue) => {
+const callGroqApiWithFallback = async (imageB64, mimeType, prompt, apiKeys, model, currentKeyIdx, onKeySwitch, shouldContinue) => {
   const activeKeys = apiKeys.filter(k => k.trim() !== '');
   if (activeKeys.length === 0) {
     throw new Error("No API keys configured. Please configure at least one API key.");
   }
 
-  // Candidate OpenRouter free vision models in priority order
+  // Candidate Groq free vision models in priority order
   const candidateModels = [
     model,
-    'google/gemma-4-31b-it:free',
-    'openrouter/free',
-    'nvidia/nemotron-nano-12b-v2-vl:free',
-    'google/gemma-4-26b-a4b-it:free',
-    'meta-llama/llama-3.2-11b-vision-instruct'
+    'meta-llama/llama-4-scout-17b-16e-instruct',
+    'meta-llama/llama-4-maverick-17b-128e-instruct',
+    'qwen/qwen3.6-27b',
+    'llama-3.2-11b-vision-preview'
   ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
 
   const buildPayload = (currentModel) => ({
@@ -422,16 +421,17 @@ const callOpenRouterApiWithFallback = async (imageB64, mimeType, prompt, apiKeys
     max_tokens: 1500
   });
 
-  const tryFetch = async (key, payload) => fetch('https://openrouter.ai/api/v1/chat/completions', {
+  const tryFetch = async (key, payload) => fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${key}`,
-      'HTTP-Referer': 'https://imagepine.com',
-      'X-Title': 'Image Pine'
+      'Authorization': `Bearer ${key}`
     },
     body: JSON.stringify(payload)
   });
+
+  let lastNonRateLimitError = null;
+  let hadRateLimit = false;
 
   // Attempt all keys. Returns { data, keyUsedIndex, modelUsed } or null if all 429.
   const tryAllKeys = async (startIdx) => {
@@ -445,12 +445,14 @@ const callOpenRouterApiWithFallback = async (imageB64, mimeType, prompt, apiKeys
       // Try each candidate model for this key
       for (let mIdx = 0; mIdx < candidateModels.length; mIdx++) {
         const currentModel = candidateModels[mIdx];
+        let response = null;
         try {
           const payload = buildPayload(currentModel);
-          let response = await tryFetch(key, payload);
+          response = await tryFetch(key, payload);
 
           // Per-key 429 retry with backoff: 5s, 10s, 20s
           if (response.status === 429) {
+            hadRateLimit = true;
             const delays = [5000, 10000, 20000];
             for (let retryCount = 0; retryCount < delays.length && response.status === 429; retryCount++) {
               onKeySwitch?.(`Rate limited (429) on Key ${index + 1} / ${currentModel}. Retrying in ${delays[retryCount] / 1000}s (attempt ${retryCount + 1}/3)...`);
@@ -461,23 +463,38 @@ const callOpenRouterApiWithFallback = async (imageB64, mimeType, prompt, apiKeys
 
           // Still 429 after retries — this key is exhausted, break to next key
           if (response.status === 429) {
+            hadRateLimit = true;
             onKeySwitch?.(`Key ${index + 1} still rate limited after retries. Trying next key...`);
+            lastNonRateLimitError = new Error(`Rate limit (429) on model ${currentModel}`);
             break;
           }
 
           if (!response.ok) {
             const errText = await response.text();
-            onKeySwitch?.(`Model ${currentModel} failed (Status ${response.status}). Trying next model...`);
+            let parsedErr = errText;
+            try { parsedErr = JSON.parse(errText)?.error?.message || errText; } catch {}
+            
+            const modelError = new Error(`API Error (Status ${response.status}) on model ${currentModel}: ${parsedErr}`);
+            onKeySwitch?.(`Model ${currentModel} failed: ${modelError.message}`);
+            
+            if (response.status !== 429) {
+              lastNonRateLimitError = modelError;
+            } else {
+              hadRateLimit = true;
+            }
+            
             if (mIdx < candidateModels.length - 1) continue;
-            throw new Error(`API Error (Status ${response.status}): ${errText}`);
+            throw modelError;
           }
 
           const data = await response.json();
           const content = data.choices?.[0]?.message?.content;
           if (!content || content.trim() === '') {
             onKeySwitch?.(`Model ${currentModel} returned empty output. Trying next model...`);
+            const modelError = new Error(`Model ${currentModel} returned an empty response.`);
+            lastNonRateLimitError = modelError;
             if (mIdx < candidateModels.length - 1) continue;
-            throw new Error(`Model ${currentModel} returned an empty response.`);
+            throw modelError;
           }
 
           resultData = data;
@@ -485,6 +502,11 @@ const callOpenRouterApiWithFallback = async (imageB64, mimeType, prompt, apiKeys
           success = true;
           break;
         } catch (err) {
+          if (response && response.status !== 429) {
+            lastNonRateLimitError = err;
+          } else if (!response) {
+            lastNonRateLimitError = err; // Network or CORS error
+          }
           if (mIdx < candidateModels.length - 1) {
             onKeySwitch?.(`Error with ${currentModel}: ${err.message}. Trying next model...`);
           }
@@ -498,16 +520,22 @@ const callOpenRouterApiWithFallback = async (imageB64, mimeType, prompt, apiKeys
       // Rotate to next key
       index = (index + 1) % activeKeys.length;
     }
-    return null; // All keys 429 or failed
+    return null; // All keys failed
   };
 
   // First pass: try all keys
   const firstPass = await tryAllKeys(currentKeyIdx % activeKeys.length);
   if (firstPass) return firstPass;
 
+  // If we had a non-rate-limit error (e.g. 401, 400, 403, network error) and did not succeed,
+  // throw it immediately instead of waiting for cooldown.
+  if (lastNonRateLimitError && !hadRateLimit) {
+    throw lastNonRateLimitError;
+  }
+
   // All keys are rate-limited — wait 60s then retry once
   const COOLDOWN = 60;
-  onKeySwitch?.(`⏳ All ${activeKeys.length} API key(s) are rate limited (429). Waiting ${COOLDOWN}s for OpenRouter limits to reset...`);
+  onKeySwitch?.(`⏳ All ${activeKeys.length} API key(s) are rate limited (429). Waiting ${COOLDOWN}s for Groq limits to reset...`);
   for (let s = COOLDOWN; s > 0; s--) {
     if (shouldContinue && !shouldContinue()) {
       throw new Error('Generation stopped by user during cooldown.');
@@ -526,6 +554,9 @@ const callOpenRouterApiWithFallback = async (imageB64, mimeType, prompt, apiKeys
   const secondPass = await tryAllKeys(0);
   if (secondPass) return secondPass;
 
+  if (lastNonRateLimitError) {
+    throw lastNonRateLimitError;
+  }
   throw new Error(`All configured API keys returned rate limits (429). Please add more API keys or wait a few minutes before resuming.`);
 };
 
@@ -556,6 +587,14 @@ export default function GenerateMetadataPage() {
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [toast, setToast] = useState(null); // { message, type }
+  const [logs, setLogs] = useState([]);
+  const logsEndRef = useRef(null);
+
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs]);
 
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
@@ -608,25 +647,23 @@ export default function GenerateMetadataPage() {
 
   const isGeneratingRef = useRef(false);
   const currentKeyIndexRef = useRef(0);
-  const [selectedModel, setSelectedModel] = useState('google/gemma-4-31b-it:free');
+  const [selectedModel, setSelectedModel] = useState('meta-llama/llama-4-scout-17b-16e-instruct');
 
   // Load API keys from browser cookies on mount
   useEffect(() => {
-    const k1 = getCookie('openrouter_key_1') || '';
-    const k2 = getCookie('openrouter_key_2') || '';
-    const k3 = getCookie('openrouter_key_3') || '';
-    let savedModel = getCookie('openrouter_model') || 'google/gemma-4-31b-it:free';
+    const k1 = getCookie('groq_key_1') || '';
+    const k2 = getCookie('groq_key_2') || '';
+    const k3 = getCookie('groq_key_3') || '';
+    let savedModel = getCookie('groq_model') || 'meta-llama/llama-4-scout-17b-16e-instruct';
     const validModels = [
-      'google/gemma-4-31b-it:free',
-      'openrouter/free',
-      'nvidia/nemotron-nano-12b-v2-vl:free',
-      'google/gemma-4-26b-a4b-it:free',
-      'meta-llama/llama-3.2-11b-vision-instruct',
-      'meta-llama/llama-3.2-90b-vision-instruct'
+      'meta-llama/llama-4-scout-17b-16e-instruct',
+      'meta-llama/llama-4-maverick-17b-128e-instruct',
+      'qwen/qwen3.6-27b',
+      'llama-3.2-11b-vision-preview'
     ];
     if (!validModels.includes(savedModel)) {
-      savedModel = 'google/gemma-4-31b-it:free';
-      setCookie('openrouter_model', savedModel, 365);
+      savedModel = 'meta-llama/llama-4-scout-17b-16e-instruct';
+      setCookie('groq_model', savedModel, 365);
     }
     
     const loaded = [];
@@ -652,6 +689,8 @@ export default function GenerateMetadataPage() {
     if (type === 'error') console.error(formatted);
     else if (type === 'warning') console.warn(formatted);
     else console.log(formatted);
+    
+    setLogs(prev => [...prev, { time, text, type }].slice(-100));
   };
 
   const handleKeyChange = (index, val) => {
@@ -690,9 +729,9 @@ export default function GenerateMetadataPage() {
     setApiKeys(finalKeys);
 
     // Save to cookies
-    setCookie('openrouter_key_1', finalKeys[0] || '', 365);
-    setCookie('openrouter_key_2', finalKeys[1] || '', 365);
-    setCookie('openrouter_key_3', finalKeys[2] || '', 365);
+    setCookie('groq_key_1', finalKeys[0] || '', 365);
+    setCookie('groq_key_2', finalKeys[1] || '', 365);
+    setCookie('groq_key_3', finalKeys[2] || '', 365);
     
     setIsSaved(true);
     setTestStatus('');
@@ -714,16 +753,14 @@ export default function GenerateMetadataPage() {
     addLog("Testing key 1 with simple ping...", "info");
 
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${firstKey}`,
-          'HTTP-Referer': 'https://imagepine.com',
-          'X-Title': 'Image Pine'
+          'Authorization': `Bearer ${firstKey}`
         },
         body: JSON.stringify({
-          model: selectedModel || 'google/gemma-4-31b-it:free',
+          model: selectedModel || 'meta-llama/llama-4-scout-17b-16e-instruct',
           messages: [{ role: 'user', content: 'Ping' }],
           max_tokens: 5
         })
@@ -760,6 +797,9 @@ export default function GenerateMetadataPage() {
     }
 
     const sanitized = await Promise.all(newFiles.map(async (f) => {
+      if (!f.id) {
+        f.id = Math.random().toString(36).slice(2, 9);
+      }
       if (!f.preview) {
         const nameLower = f.name.toLowerCase();
         const isVideoFile = f.type?.startsWith('video/') || ['.mp4', '.webm', '.mov', '.ogg'].some(ext => nameLower.endsWith(ext));
@@ -824,7 +864,7 @@ export default function GenerateMetadataPage() {
     const activeKeys = apiKeys.filter(k => k.trim() !== '');
     if (activeKeys.length === 0) {
       setShowConfig(true);
-      showToast("Please configure and save at least one OpenRouter API Key under 'API Configuration' first.", "warning");
+      showToast("Please configure and save at least one Groq API Key under 'API Configuration' first.", "warning");
       return;
     }
 
@@ -890,8 +930,8 @@ export default function GenerateMetadataPage() {
           mimeType = res.mimeType;
         }
 
-        // Send API Request to OpenRouter
-        const { data, keyUsedIndex, modelUsed } = await callOpenRouterApiWithFallback(
+        // Send API Request to Groq
+        const { data, keyUsedIndex, modelUsed } = await callGroqApiWithFallback(
           b64,
           mimeType,
           prompt,
@@ -1189,12 +1229,12 @@ export default function GenerateMetadataPage() {
   return (
     <ToolPageShell
       title="Generate Metadata"
-      subtitle="Instantly generate SEO tags, titles, and descriptions for your files using free OpenRouter vision AI. Ideal for stock photography cataloging."
+      subtitle="Instantly generate SEO tags, titles, and descriptions for your files using Groq Llama 4 Scout vision AI. Ideal for stock photography cataloging."
       features={_FEATURES}
       steps={_STEPS}
       faqs={_FAQS}
       seoTitle="AI Image Metadata Generator — Batch Generate Titles, Tags & Descriptions"
-      seoText="Free online client-side AI Metadata Generator. Batch generate search engine metadata tags, file descriptions, and titles for your portfolio using OpenRouter free vision models. Custom lengths, keyword rules, and local CSV downloads with total privacy."
+      seoText="Free online client-side AI Metadata Generator. Batch generate search engine metadata tags, file descriptions, and titles for your portfolio using Groq Llama 4 Scout vision models. Custom lengths, keyword rules, and local CSV downloads with total privacy."
     >
       <div className="flex flex-col gap-6">
 
@@ -1213,7 +1253,7 @@ export default function GenerateMetadataPage() {
               <div>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111128', margin: 0 }}>API Configuration</h3>
                 <p style={{ fontSize: 11, color: '#9898B5', margin: '2px 0 0' }}>
-                  {numConfiguredKeys > 0 ? `${numConfiguredKeys} key${numConfiguredKeys > 1 ? 's' : ''} configured` : 'Enter OpenRouter API key to start'}
+                  {numConfiguredKeys > 0 ? `${numConfiguredKeys} key${numConfiguredKeys > 1 ? 's' : ''} configured` : 'Enter Groq API key to start'}
                 </p>
               </div>
             </div>
@@ -1233,7 +1273,7 @@ export default function GenerateMetadataPage() {
           {showConfig && (
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F1F1F7', display: 'flex', flexDirection: 'column', gap: 14 }} className="animate-fade-in">
               <p style={{ fontSize: 12, color: '#6B6B8A', margin: 0, lineHeight: 1.5 }}>
-                Provide up to three OpenRouter API Keys. Keys are stored securely in browser cookies and sent directly to OpenRouter. If key 1 hits a rate limit (HTTP 429), rotation fallbacks will proceed to key 2, then key 3.
+                Provide up to three Groq API Keys. Keys are stored securely in browser cookies and sent directly to Groq. If key 1 hits a rate limit (HTTP 429), rotation fallbacks will proceed to key 2, then key 3.
               </p>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1244,7 +1284,7 @@ export default function GenerateMetadataPage() {
                         type={showKeys[idx] ? 'text' : 'password'}
                         value={key}
                         onChange={(e) => handleKeyChange(idx, e.target.value)}
-                        placeholder={`OpenRouter API Key ${idx + 1}`}
+                        placeholder={`Groq API Key ${idx + 1}`}
                         style={{
                           width: '100%', padding: '9px 40px 9px 12px',
                           background: '#F7F7FB', border: '1px solid #E4E4EF',
@@ -1337,7 +1377,7 @@ export default function GenerateMetadataPage() {
                 )}
 
                 <a
-                  href="https://openrouter.ai/keys"
+                  href="https://console.groq.com/keys"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -1868,7 +1908,7 @@ export default function GenerateMetadataPage() {
                       value={selectedModel}
                       onChange={(e) => {
                         setSelectedModel(e.target.value);
-                        setCookie('openrouter_model', e.target.value, 365);
+                        setCookie('groq_model', e.target.value, 365);
                         addLog(`Preferred model changed to: ${e.target.value}`, "info");
                       }}
                       style={{
@@ -1884,12 +1924,10 @@ export default function GenerateMetadataPage() {
                         outline: 'none'
                       }}
                     >
-                      <option value="google/gemma-4-31b-it:free">Google: Gemma 4 31B (Default · Free)</option>
-                      <option value="openrouter/free">Auto Free Model (Recommended · Free)</option>
-                      <option value="nvidia/nemotron-nano-12b-v2-vl:free">NVIDIA: Nemotron Nano 12B VL (Free)</option>
-                      <option value="google/gemma-4-26b-a4b-it:free">Google: Gemma 4 26B (Free)</option>
-                      <option value="meta-llama/llama-3.2-11b-vision-instruct">Llama 3.2 11B Vision (Paid)</option>
-                      <option value="meta-llama/llama-3.2-90b-vision-instruct">Llama 3.2 90B Vision (Paid)</option>
+                      <option value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout 17B (Default)</option>
+                      <option value="meta-llama/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick 17B</option>
+                      <option value="qwen/qwen3.6-27b">Qwen 3.6 27B</option>
+                      <option value="llama-3.2-11b-vision-preview">Llama 3.2 11B Vision (Legacy)</option>
                     </select>
                   </div>
 
