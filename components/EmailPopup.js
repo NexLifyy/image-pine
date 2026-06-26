@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 
-const COOKIE_SUBSCRIBED = "ip_subscribed";
-const COOKIE_DISMISSED  = "ip_popup_dismissed";
-const DISMISS_DAYS = 7;
+const COOKIE_SUBSCRIBED    = "ip_subscribed";
+const COOKIE_DISMISSED     = "ip_popup_dismissed";
+const COOKIE_DISMISS_COUNT = "ip_popup_dismiss_count";
 const DELAY_MS = 15000;
+
+// Dismiss schedule: 1st close = 7 days, 2nd close = 30 days, 3rd+ = never
+const DISMISS_SCHEDULE = [7, 30];
 
 function getCookie(name) {
   if (typeof document === "undefined") return null;
@@ -70,7 +73,21 @@ export default function EmailPopup() {
   }, [visible]);
 
   const handleDismiss = () => {
-    setCookie(COOKIE_DISMISSED, "1", DISMISS_DAYS);
+    // Read current dismiss count, increment it
+    const currentCount = parseInt(getCookie(COOKIE_DISMISS_COUNT) || "0", 10);
+    const newCount = currentCount + 1;
+
+    if (newCount > DISMISS_SCHEDULE.length) {
+      // 3rd+ close: set dismissed forever (10 years)
+      setCookie(COOKIE_DISMISSED, "1", 3650);
+    } else {
+      // 1st close = 7 days, 2nd close = 30 days
+      const days = DISMISS_SCHEDULE[newCount - 1];
+      setCookie(COOKIE_DISMISSED, "1", days);
+    }
+
+    // Always update dismiss count (permanent counter)
+    setCookie(COOKIE_DISMISS_COUNT, String(newCount), 3650);
     setVisible(false);
   };
 
