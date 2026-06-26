@@ -307,7 +307,7 @@ export default function ContactPage() {
                 <div>
                   <h4 style={{ fontSize: 13, fontWeight: 800, color: '#111128', margin: '0 0 4px' }}>Privacy Guarantee</h4>
                   <p style={{ fontSize: 11, color: '#6B6B8A', lineHeight: 1.6, margin: 0 }}>
-                    We never share your email address or form data. Everything is encrypted in transit and deleted immediately after review.
+                    We never share your email address or form data. All submissions are encrypted in transit and used solely to respond to your message.
                   </p>
                 </div>
               </div>
