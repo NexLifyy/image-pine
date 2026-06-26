@@ -1,4 +1,4 @@
-﻿// Cloudflare Pages Function: functions/api/subscribe.js
+// Cloudflare Pages Function: functions/api/subscribe.js
 // Handles POST /api/subscribe
 
 const RATE_LIMIT = 5;
@@ -54,7 +54,7 @@ async function addToBrevo(email, apiKey) {
     const res = await fetch('https://api.brevo.com/v3/contacts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
-      body: JSON.stringify({ email: email.trim().toLowerCase(), updateEnabled: false }),
+      body: JSON.stringify({ email: email.trim().toLowerCase(), updateEnabled: false, listIds: [3] }),
     });
     if (res.status === 201 || res.status === 204) {
       return { ok: true, message: "You're on the list! Thanks for subscribing." };
