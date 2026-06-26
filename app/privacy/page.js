@@ -132,14 +132,40 @@ export default function PrivacyPage() {
           </div>
 
           <div>
-            <h2 style={h2Style}>5. Policy Changes</h2>
+            <h2 style={h2Style}>5. Email Subscriptions</h2>
+            <p style={{ ...pStyle, marginTop: 12 }}>
+              You may voluntarily subscribe to <span className="notranslate">ImagePine</span> product updates and announcements by providing your email address through our subscription popup. This is entirely optional — no account or subscription is required to use any of our tools.
+            </p>
+            <p style={{ ...pStyle, marginTop: 10 }}>
+              Email addresses collected through the subscription form are stored securely using <strong>Brevo</strong> (formerly Sendinblue), a trusted third-party email marketing platform. Your email address will only ever be used to send you <span className="notranslate">ImagePine</span> product updates, new feature announcements, and related communications. We will never sell, rent, or share your email address with any third party for marketing purposes.
+            </p>
+            <p style={{ ...pStyle, marginTop: 10 }}>
+              You may unsubscribe at any time by clicking the unsubscribe link included in every email we send. Upon unsubscribing, your email address will be removed from our mailing list promptly.
+            </p>
+          </div>
+
+          <div>
+            <h2 style={h2Style}>6. Bot Protection and Cookies</h2>
+            <p style={{ ...pStyle, marginTop: 12 }}>
+              We use <strong>Cloudflare Turnstile</strong> on our subscription and contact forms to protect against spam, abuse, and automated bot submissions. Turnstile operates invisibly in the background — no CAPTCHA puzzle or checkbox is shown to legitimate users.
+            </p>
+            <p style={{ ...pStyle, marginTop: 10 }}>
+              As part of this protection, Cloudflare Turnstile may set cookies or use similar browser-local storage mechanisms to distinguish legitimate human users from automated traffic. These cookies are technical in nature, contain no personal information, and are governed by <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer" style={{ color: '#5B5BD6', fontWeight: 600, textDecoration: 'none' }}>Cloudflare&apos;s Privacy Policy</a>.
+            </p>
+            <p style={{ ...pStyle, marginTop: 10 }}>
+              We also use browser cookies to remember your subscription and popup dismissal preferences (e.g., to avoid showing the subscription popup repeatedly to users who have already subscribed or dismissed it). These cookies do not contain personal data and are stored only on your device.
+            </p>
+          </div>
+
+          <div>
+            <h2 style={h2Style}>7. Policy Changes</h2>
             <p style={{ ...pStyle, marginTop: 12 }}>
               We may update this policy occasionally as we introduce new tools. Rest assured, our core privacy principle will remain unchanged: <strong>your images and documents will never be uploaded.</strong>
             </p>
           </div>
 
           <div>
-            <h2 style={h2Style}>6. Contact Information</h2>
+            <h2 style={h2Style}>8. Contact Information</h2>
             <p style={{ ...pStyle, marginTop: 12 }}>
               If you have any questions about this Privacy Policy or browser-local processing, please contact us at: <a href="mailto:hello@imagepine.com" style={{ color: '#5B5BD6', fontWeight: 600, textDecoration: 'none' }}>hello@imagepine.com</a>.
             </p>

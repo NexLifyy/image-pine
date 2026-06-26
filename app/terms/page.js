@@ -133,7 +133,20 @@ export default function TermsPage() {
           </div>
 
           <div>
-            <h2 style={h2Style}>7. Contact Us</h2>
+            <h2 style={h2Style}>7. Email Subscriptions</h2>
+            <p style={{ ...pStyle, marginTop: 12 }}>
+              Subscribing to <span className="notranslate">ImagePine</span> product updates is entirely optional. No subscription is required to access or use any of our tools.
+            </p>
+            <p style={{ ...pStyle, marginTop: 10 }}>
+              If you choose to subscribe, <span className="notranslate">ImagePine</span> may send you occasional emails about new features, tool updates, and platform announcements. We will not send promotional emails unrelated to <span className="notranslate">ImagePine</span>.
+            </p>
+            <p style={{ ...pStyle, marginTop: 10 }}>
+              You may unsubscribe at any time by clicking the unsubscribe link included in any email we send. Your request will be processed promptly.
+            </p>
+          </div>
+
+          <div>
+            <h2 style={h2Style}>8. Contact Us</h2>
             <p style={{ ...pStyle, marginTop: 12 }}>
               If you have any questions or feedback regarding these Terms, please email us at: <a href="mailto:hello@imagepine.com" style={{ color: '#5B5BD6', fontWeight: 600, textDecoration: 'none' }}>hello@imagepine.com</a>.
             </p>
