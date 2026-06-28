@@ -57,6 +57,16 @@ const LANGUAGES = [
   { val: 'chi_sim', label: 'Chinese (简体中文)' }
 ];
 
+const STATUS_MAP = {
+  'loading tesseract api': 'Getting ready...',
+  'initialized tesseract api': 'Getting ready...',
+  'loading language traineddata': 'Loading files... (Please hold)',
+  'loaded language traineddata': 'Files loaded!',
+  'initializing api': 'Starting scanner...',
+  'initialized api': 'Scanner ready!',
+  'recognizing text': 'Reading text...'
+};
+
 const testIndexedDB = () => {
   return new Promise((resolve) => {
     const timer = setTimeout(() => resolve(false), 1000);
@@ -134,11 +144,13 @@ export default function OcrPage() {
         cacheMethod: useCache ? 'write' : 'none',
         logger: (m) => {
           if (!active) return;
+          const displayStatus = STATUS_MAP[m.status] || 
+            (m.status ? m.status.charAt(0).toUpperCase() + m.status.slice(1) : 'Loading...');
+          setProgressStatus(displayStatus);
+
           if (m.status === 'recognizing text') {
-            setProgressStatus('Recognizing text...');
             setProgressPercent(Math.round(m.progress * 100));
           } else {
-            setProgressStatus(m.status || 'Loading...');
             setProgressPercent(0);
           }
         }
