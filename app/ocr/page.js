@@ -60,6 +60,8 @@ const LANGUAGES = [
 const STATUS_MAP = {
   'loading tesseract api': 'Getting ready...',
   'initialized tesseract api': 'Getting ready...',
+  'loading tesseract core': 'Getting ready...',
+  'initialized tesseract core': 'Getting ready...',
   'loading language traineddata': 'Loading files... (Please hold)',
   'loaded language traineddata': 'Files loaded!',
   'initializing api': 'Starting scanner...',
@@ -133,7 +135,7 @@ export default function OcrPage() {
     if (!active) return;
     setIsProcessing(true);
     setErrorMsg('');
-    setProgressStatus('Initializing Tesseract...');
+    setProgressStatus('Getting ready...');
     setProgressPercent(0);
 
     const imgSrc = file.preview || URL.createObjectURL(file);
@@ -144,8 +146,22 @@ export default function OcrPage() {
         cacheMethod: useCache ? 'write' : 'none',
         logger: (m) => {
           if (!active) return;
-          const displayStatus = STATUS_MAP[m.status] || 
-            (m.status ? m.status.charAt(0).toUpperCase() + m.status.slice(1) : 'Loading...');
+          
+          let displayStatus = 'Getting ready...';
+          if (m.status) {
+            const lowerStatus = m.status.toLowerCase();
+            if (STATUS_MAP[m.status]) {
+              displayStatus = STATUS_MAP[m.status];
+            } else if (lowerStatus.includes('recognizing') || lowerStatus.includes('recognize')) {
+              displayStatus = 'Reading text...';
+            } else if (lowerStatus.includes('language') || lowerStatus.includes('traineddata') || lowerStatus.includes('tessdata')) {
+              displayStatus = lowerStatus.includes('loaded') ? 'Files loaded!' : 'Loading files... (Please hold)';
+            } else if (lowerStatus.includes('tesseract') || lowerStatus.includes('core') || lowerStatus.includes('api')) {
+              displayStatus = 'Getting ready...';
+            } else {
+              displayStatus = m.status.charAt(0).toUpperCase() + m.status.slice(1);
+            }
+          }
           setProgressStatus(displayStatus);
 
           if (m.status === 'recognizing text') {
