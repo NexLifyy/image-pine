@@ -10,9 +10,9 @@ import Tesseract from 'tesseract.js';
 const _FEATURES = [
   { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 2H4a2 2 0 0 0-2 2v3M20 7V4a2 2 0 0 0-2-2h-3M4 22H7m-3 0a2 2 0 0 1-2-2v-3M20 17v3a2 2 0 0 1-2 2h-3M9 8h6M9 12h6M9 16h6" /></svg>), title: 'Text Recognition', desc: 'Scan screenshots, documents, and photos to extract plain text instantly.' },
   { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>), title: 'Multi-Language Support', desc: 'Default to English, with quick options for Spanish, French, German, or Chinese.' },
-  { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>), title: '100% Secure & Local', desc: 'OCR worker runs completely inside your browser. No server uploads.' },
+  { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>), title: '100% Secure & Local', desc: 'Text extraction runs completely inside your browser. No server uploads.' },
   { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>), title: 'Text Export', desc: 'Save your extracted text as a .txt document or copy with a single click.' },
-  { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>), title: 'Instant Web Worker', desc: 'Uses multithreading in-browser parsing to scan text without freezing the tab UI.' },
+  { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>), title: 'Instant Local Processing', desc: 'Uses your browser\'s processing power to scan text instantly without freezing the page.' },
   { icon: (<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="9" width="20" height="6" rx="3" /><path d="M5 12h10" strokeWidth="3" /></svg>), title: 'Visual Progress Bar', desc: 'Watch the recognition progress step-by-step from loading to completion.' }
 ];
 
@@ -25,11 +25,11 @@ const _STEPS = [
 const _FAQS = [
   {
     q: "Is my document text safe?",
-    a: "Yes. The OCR parsing is done purely using Tesseract.js Web Workers inside your browser. Your images and text never traverse any network."
+    a: "Yes, 100%. The text extraction runs completely inside your web browser. Your images and text are processed locally on your device and are never uploaded to any server, keeping them entirely private."
   },
   {
     q: "Why does the first run take a bit longer?",
-    a: "Tesseract.js downloads the language model file (e.g. eng.traineddata) on the first run, which is cached in your browser indexDB for subsequent instantaneous loads."
+    a: "On the first run, the tool needs to load a small file to read the language of your text. Once loaded, this file is saved in your browser's secure local storage so subsequent scans start instantly, even if you are offline."
   },
   {
     q: "Can it scan handwritten text?",
@@ -290,7 +290,7 @@ export default function OcrPage() {
       features={_FEATURES}
       steps={_STEPS}
       faqs={_FAQS}
-      seoText="Free browser-based Image OCR text extractor. Extract text from screenshots and photos locally using Tesseract.js. Secure, private, and supports multiple languages."
+      seoText="Free browser-based Image OCR text extractor. Extract text from screenshots, documents, and photos locally and privately. Secure, private, and supports multiple languages."
     >
       <div className="flex flex-col gap-6">
         {!file ? (
